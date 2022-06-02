@@ -56,23 +56,27 @@ namespace VMS.TPS
         public void Execute(ScriptContext context, System.Windows.Window window)
         {
 
-            //The script writes in the database
-            context.Patient.BeginModifications();
+            // 19/5-22 Has been moved to the two methods of the UI that modifies the patient.
+            //context.Patient.BeginModifications();
 
             // Script window generation
             var mainControl = new Evaluering4D.UserControl1();
             window.Content = mainControl;
-            window.Width = 870;
-            window.Height = 850;
-
+            window.Width = 1050;
+            window.MaxWidth = 1050;
+            window.MinWidth = 700;
+            window.Height = 720;
+            window.MaxHeight = 720;
+            window.MinHeight = 400;
             //Patient information is saved here
             mainControl.ScriptInfo = context;
 
             //All open plans are selectable in the first combobox
             foreach (var plan in context.PlansInScope)
             {
-                mainControl.SelectPlan_cb.Items.Add(plan.Id);
-            }          
+                //Writing also the course name in case there are more plans with same name.
+                mainControl.SelectPlan_cb.Items.Add(plan.Course.Id  + "/" + plan.Id);
+            }
         }
     }
 }

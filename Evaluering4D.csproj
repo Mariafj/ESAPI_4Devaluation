@@ -7,8 +7,8 @@
     <OutputType>library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Evaluering4D</RootNamespace>
-    <AssemblyName>Evaluering4D_v3.esapi</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <AssemblyName>Evaluering4D.esapi</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -50,11 +50,11 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="VMS.TPS.Common.Model.API">
-      <HintPath>C:\Program Files (x86)\Varian\Vision\13.7\Bin64\esapi\VMS.TPS.Common.Model.API.dll</HintPath>
+      <HintPath>..\Hospitalsfysiker\ESAPI\dlls\VMS.TPS.Common.Model.API.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VMS.TPS.Common.Model.Types">
-      <HintPath>C:\Program Files (x86)\Varian\Vision\13.7\Bin64\esapi\VMS.TPS.Common.Model.Types.dll</HintPath>
+      <HintPath>..\Hospitalsfysiker\ESAPI\dlls\VMS.TPS.Common.Model.Types.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
