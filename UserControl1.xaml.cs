@@ -48,7 +48,6 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
-using System.Windows.Threading;
 
 namespace Evaluering4D
 {
@@ -149,8 +148,7 @@ namespace Evaluering4D
             CTV1_cb.Items.Clear();
             CTV2_cb.Items.Clear();
             Spinal_cb.Items.Clear();
-            Spinal2_cb.Items.Clear();
-
+            
             CT00_cb.Items.Clear();
             CT10_cb.Items.Clear();
             CT20_cb.Items.Clear();
@@ -175,22 +173,6 @@ namespace Evaluering4D
 
         }
 
-
-        void AllowUIToUpdate()
-        {
-            DispatcherFrame frame = new DispatcherFrame();
-            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Render, new DispatcherOperationCallback(delegate (object parameter)
-            {
-                frame.Continue = false;
-                return null;
-            }), null);
-
-            Dispatcher.PushFrame(frame);
-            //EDIT:
-            System.Windows.Application.Current.Dispatcher.Invoke(DispatcherPriority.Background,
-                                          new Action(delegate { }));
-        }
-
         /// <summary>
         /// The user selects the main plan and comboboxes for structure selection and image selection are filled.
         /// </summary>
@@ -202,35 +184,28 @@ namespace Evaluering4D
             //Buttons that are not to be used are disabled.
             EvalDoseE_btn.IsEnabled = false;
             CopyPlan_btn.IsEnabled = false;
-            //PrepareImages_btn.IsEnabled = false;
+            PrepareImages_btn.IsEnabled = false;
             ExportDVH_btn.IsEnabled = false;
 
             //The treatment plan is defined and saved in the public variable.
-            string[] planname = SelectPlan_cb.SelectedItem.ToString().Split('/');
-            string courseid = planname.First();
-            string planid = planname.Last();
-            PlanSetup mainPlan = ScriptInfo.Patient.Courses.Where(c => c.Id == courseid).FirstOrDefault().PlanSetups.Where(p => p.Id == planid).FirstOrDefault();
+            PlanSetup mainPlan = ScriptInfo.PlansInScope.First(p => p.Id == SelectPlan_cb.SelectedItem.ToString());
             SelectedPlan = mainPlan;
 
             // Combobox with structure names are filled and sorted alfabetically
             CTV1_cb.Items.Add("Skip");
             CTV2_cb.Items.Add("Skip");
             Spinal_cb.Items.Add("Skip");
-            Spinal2_cb.Items.Add("Skip");
-
             IEnumerable<Structure> sortedStructs = mainPlan.StructureSet.Structures.OrderBy(s => s.Id);
             foreach (var struc in sortedStructs)
             {
                 CTV1_cb.Items.Add(struc.Id);
                 CTV2_cb.Items.Add(struc.Id);
                 Spinal_cb.Items.Add(struc.Id);
-                Spinal2_cb.Items.Add(struc.Id);
             }
             //"Skip" is the default structure choice
             CTV1_cb.SelectedItem = CTV1_cb.Items[0];
             CTV2_cb.SelectedItem = CTV1_cb.Items[0];
             Spinal_cb.SelectedItem = Spinal_cb.Items[0];
-            Spinal2_cb.SelectedItem = Spinal2_cb.Items[0];
 
             //The comboboxes with CT images are filled. We will try to select only relevant images.
             //NB THIS SELECTION WILL DEPEND ON THE COMMENTS SENT FROM THE CT SCANNER!
@@ -549,7 +524,7 @@ namespace Evaluering4D
             // If the user wants to create new plans the correct buttons are enables
             if (writeYN)
             {
-                //PrepareImages_btn.IsEnabled = true;
+                PrepareImages_btn.IsEnabled = true;
                 CopyPlan_btn.IsEnabled = true;
             }
 
@@ -651,31 +626,34 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// For all images with structuresets the overwrittes structures are copied to the phases from the nominal plan scan. 
-        /// It the scans have the same imaging device the HU values are also transfered.
+        /// The 4DCT phases are modified acording to the planning CT:
+        /// The same calibration curve is set, if possible
+        /// Overwritten structures are also overwritten on the phases if they structures have been transfered before hand by the user.
         /// </summary>
-        private void OverwriteStructures()
+        private void PrepareImages_btn_Click(object sender, RoutedEventArgs e)
         {
-
+            //A list with all the images.
             VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-            StructureSet[] structureSetList = new StructureSet[10];
 
-            int[] checklist = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //MAY 2022
-            //Are we missing structuresets on the images?
-            for (int i = 0; i < imageList.Length; i++)
+            // The imagingDevice (aka the calibration curve) is compared. 
+            // If it is different we will try to change it. 
+            // If it cannot be changed the user will recieve a message about it.
+            foreach (var img in imageList)
             {
-                var img = imageList.ElementAt(i);
-
-                //Finding the structure set for the image phase
-                foreach (var struSet in ScriptInfo.Patient.StructureSets)
+                if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
                 {
-                    if (struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
+                    try
                     {
-                        //We have a structureset!
-                        checklist[i] = 1;
-                        structureSetList[i] = struSet;
+                        img.Series.SetImagingDevice(SelectedPlan.StructureSet.Image.Series.ImagingDeviceId);
+                        errormessages += img.Series.Id + "/" + img.Id + ": Imaging device is set to " + SelectedPlan.StructureSet.Image.Series.ImagingDeviceId + "\n";
+
+                    }
+                    catch (Exception)
+                    {
+                        if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
+                        {
+                            errormessages += img.Series.Id + "/" + img.Id + ": Unable to set imaging device" + "\n";
+                        }
                     }
                 }
             }
@@ -692,367 +670,48 @@ namespace Evaluering4D
             }
             errormessages += SelectedPlan.Id + " has " + overwrittenStructs.Count() + " overwritten structures." + "\n";
 
-
-            for (int i = 0; i < imageList.Count(); i++)
-            {
-                var img = imageList[i];
-
-                // We will only transfer HU if the images are on the same calibration curve
-                if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
-                {
-                    var struSet = structureSetList[i];
-                    // System.Windows.MessageBox.Show("Image: " + struSet.Image.Id + " Series: " + struSet.Image.Series.Id + " Har et strukturset: " + struSet.Id);
-                }
-            }
-
-            ////We will loop over all the images in the list and overwrite structures where it is possible
-            for (int i = 0; i < imageList.Count(); i++)
-            {
-                var img = imageList[i];
-
-                // We will only transfer HU if the images are on the same calibration curve
-                if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
-                {
-
-                    var struSet = structureSetList[i];
-
-                    //System.Windows.MessageBox.Show("Image: " + struSet.Image.Id + " Series: " + struSet.Image.Series.Id + " Har et strukturset: " + struSet.Id);
-
-                    if (struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
-                    {
-                        // It is not possible to set the materialstable                            
-                        // Looking through all structures to finde the correct structure names.
-                        foreach (var strSelected in overwrittenStructs)
-                        {
-
-                            bool structureExist = false;
-                            foreach (var str in struSet.Structures)
-                            {
-                                if (str.Id == strSelected.Id)
-                                {
-                                    structureExist = true;
-                                }
-                            }
-
-                            //The structure has been copied. We can now overwrite it.
-                            if (structureExist)
-                            {
-
-                                var str = struSet.Structures.Where(s => s.Id == strSelected.Id).First();
-
-                                try
-                                {
-                                    double HU;
-                                    strSelected.GetAssignedHU(out HU);
-                                    str.SetAssignedHU(HU);
-                                    errormessages += "HU-value: " + HU.ToString() + " assigned toe: " + str.Id + " on image: " + img.Series.Id + "/" + img.Id + "\n";
-
-                                }
-                                catch (Exception)
-                                {
-                                    errormessages += "Unable to set HU-value to: " + str.Id + " on image: " + img.Series.Id + "/" + img.Id + "\n";
-                                }
-                            }
-                            else if (struSet.CanAddStructure(strSelected.DicomType, strSelected.Id))
-                            {                          
-                                //We will now try to copy the structure!
-
-                                double HU;
-                                Structure newstru = struSet.AddStructure(strSelected.DicomType, strSelected.Id);
-                                newstru.SegmentVolume = strSelected.SegmentVolume;
-                                strSelected.GetAssignedHU(out HU);
-                                newstru.SetAssignedHU(HU);
-                                errormessages += "HU-value: " + HU.ToString() + " assigned to: " + newstru.Id + " on image: " + img.Series.Id + "/" + img.Id + "\n";
-                            }
-                        }
-                    }
-                }
-            }
-
-            Errors_txt.Text = errormessages;
-        }
-
-        /// <summary>
-        /// The calibration curve is set to the same device as for the nominal plan if it is possible.
-        /// </summary>
-        private void CopyCalibration()
-        {
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-
-
-            // The imagingDevice (aka the calibration curve) is compared. 
-            // If it is different we will try to change it. 
-            // If it cannot be changed the user will recieve a message about it.
+            //We will loop over all the images in the list
             foreach (var img in imageList)
             {
-                if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
+                // We will only transfer HU if the images are on the same calibration curve
+                if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
                 {
-                    try
+                    //Finding the structure set for the image phase
+                    foreach (var struSet in ScriptInfo.Patient.StructureSets)
                     {
-                        img.Series.SetImagingDevice(SelectedPlan.StructureSet.Image.Series.ImagingDeviceId);
-                        errormessages += img.Series.Id + "/" + img.Id + ": Imaging device: " + SelectedPlan.StructureSet.Image.Series.ImagingDeviceId + "\n";
-
-                    }
-                    catch (Exception)
-                    {
-                        if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
+                        if (struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
                         {
-                            errormessages += img.Series.Id + "/" + img.Id + ": Unable to set imaging device" + "\n";
+                            // It is not possible to set the materialstable                            
+                            // Looking through all structures to finde the correct structure names.
+                            foreach (var str in struSet.Structures)
+                            {
+                                foreach (var strSelected in overwrittenStructs)
+                                {
+
+                                    if (str.Id == strSelected.Id)
+                                    {
+                                        try
+                                        {
+                                            double HU;
+                                            strSelected.GetAssignedHU(out HU);
+                                            str.SetAssignedHU(HU);
+                                            errormessages += "HU-value: " + HU.ToString() + " assigned for structure: " + str.Id + " on image: " + img.Series.Id + "/" + img.Id + "\n";
+
+                                        }
+                                        catch (Exception)
+                                        {
+                                            errormessages += "Unable to set HU-value for structure: " + str.Id + " on image: " + img.Series.Id + "/"+ img.Id + "\n";
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
+
             Errors_txt.Text = errormessages;
         }
-
-        /// <summary>
-        /// For each phase in the 4D we search for a structure set. 
-        /// If the set does not exist it is created and the body structure is copied from the nominal plan. 
-        /// If it exists the body structure is overwritten with the structure from the nominal plan if possible.
-        /// </summary>
-        private void CreateBody()
-        {
-            //A list with all the images.
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-            StructureSet[] structureSetList = new StructureSet[10];
-
-            int[] checklist = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //MAY 2022
-            //Are we missing structuresets on the images?
-            for (int i = 0; i < imageList.Length; i++)
-            {
-                var img = imageList.ElementAt(i);
-
-                //Finding the structure set for the image phase
-                foreach (var struSet in ScriptInfo.Patient.StructureSets)
-                {
-                    if (struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
-                    {
-                        //We have a structureset!
-                        checklist[i] = 1;
-                        structureSetList[i] = struSet;
-                    }
-                }
-            }
-
-
-            // Missing structure sets will be created and a body is copied from the original scan.
-            Structure bodystructure = SelectedPlan.StructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
-            for (int i = 0; i < checklist.Count(); i++)
-            {
-                if (checklist[i] != 1)
-                {
-                    var img = imageList.ElementAt(i);
-                    StructureSet test = img.CreateNewStructureSet();
-                    test.Id = img.Id;
-
-                    var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
-                    Structure newBody = test.CreateAndSearchBody(parameters);
-                    newBody.Id = "BODY";
-                    structureSetList[i] = test;
-                    newBody.SegmentVolume = bodystructure.SegmentVolume;
-
-                    errormessages += img.Series.Id + "/" + img.Id + ": BODY is copied. \n";
-                }
-                else
-                {
-                    var img = imageList.ElementAt(i);
-                    Structure bodystructurePhase = structureSetList[i].Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
-
-                    try
-                    {
-                        bodystructurePhase.SegmentVolume = bodystructure.SegmentVolume;
-                        errormessages += img.Series.Id + "/" + img.Id + ": BODY is copied. \n";
-                    }
-                    catch (Exception)
-                    {
-                        errormessages += img.Series.Id + "/" + img.Id + ": BODY is NOT copied. \n";
-                    }
-
-                }
-            }
-            Errors_txt.Text = errormessages;
-        }
-
-        /// <summary>
-        /// The 4DCT phases are modified acording to the planning CT:
-        /// The same calibration curve is set, if possible
-        /// Overwritten structures are also overwritten on the phases if they structures have been transfered before hand by the user.
-        /// </summary>
-        //private void PrepareImages_btn_Click(object sender, RoutedEventArgs e)
-        //{
-        //    //The script writes in the database
-        //    ScriptInfo.Patient.BeginModifications();
-
-
-        //    //A list with all the images.
-        //    VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-        //    StructureSet[] structureSetList = new StructureSet[10];
-
-        //    int[] checklist = new int[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-        //    //MAY 2022
-        //    //Are we missing structuresets on the images?
-        //    for (int i = 0; i < imageList.Length; i++)
-        //    {
-
-        //        var img = imageList.ElementAt(i);
-
-        //        //Finding the structure set for the image phase
-        //        foreach (var struSet in ScriptInfo.Patient.StructureSets)
-        //        {
-        //            if (struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
-        //            {
-        //                //We have a structureset!
-        //                checklist[i] = 1;
-        //                structureSetList[i] = struSet;
-        //            }
-        //        }
-        //    }
-
-
-        //    //We are now looking for structure set and if it does not exist it will be copied from the main plan.
-        //    Structure bodystructure = SelectedPlan.StructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
-        //    for (int i = 0; i < checklist.Count(); i++)
-        //    {
-        //        if (checklist[i]!= 1)
-        //        {
-        //            var img = imageList.ElementAt(i);
-        //            StructureSet test = img.CreateNewStructureSet();
-        //            test.Id = img.Id;
-
-        //            var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
-        //            Structure newBody = test.CreateAndSearchBody(parameters);
-        //            newBody.Id = "BODY";
-        //            structureSetList[i] = test;
-        //            newBody.SegmentVolume = bodystructure.SegmentVolume;
-
-        //            errormessages += img.Series.Id + "/" + img.Id + ": The body structure has been copied from the main structureset. \n";
-        //        }
-        //    }
-
-
-        //    System.Windows.MessageBox.Show("Nu sættes kalibreringskurven");
-        //    // The imagingDevice (aka the calibration curve) is compared. 
-        //    // If it is different we will try to change it. 
-        //    // If it cannot be changed the user will recieve a message about it.
-        //    foreach (var img in imageList)
-        //    {
-        //        if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
-        //        {
-        //            try
-        //            {
-        //                img.Series.SetImagingDevice(SelectedPlan.StructureSet.Image.Series.ImagingDeviceId);
-        //                errormessages += img.Series.Id + "/" + img.Id + ": Imaging device is set to " + SelectedPlan.StructureSet.Image.Series.ImagingDeviceId + "\n";
-
-        //            }
-        //            catch (Exception)
-        //            {
-        //                if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
-        //                {
-        //                    errormessages += img.Series.Id + "/" + img.Id + ": Unable to set imaging device" + "\n";
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    System.Windows.MessageBox.Show("Nu overskrives strukturer med HUværdier");
-        //    //Finding overwritten structures and looking for the same structures on the phases
-        //    List<Structure> overwrittenStructs = new List<Structure>();
-        //    foreach (var stru in SelectedPlan.StructureSet.Structures)
-        //    {
-        //        double HU;
-        //        if (stru.GetAssignedHU(out HU))
-        //        {
-        //            overwrittenStructs.Add(stru);
-        //        }
-        //    }
-        //    //errormessages += SelectedPlan.Id + " has " + overwrittenStructs.Count() + " overwritten structures." + "\n";
-
-
-        //    for (int i = 0; i < imageList.Count(); i++)
-        //    {
-        //        var img = imageList[i];
-
-        //        // We will only transfer HU if the images are on the same calibration curve
-        //        if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
-        //        {
-
-        //            var struSet = structureSetList[i];
-
-        //            //System.Windows.MessageBox.Show("Image: " + struSet.Image.Id + " Series: " + struSet.Image.Series.Id + " Har et strukturset: " + struSet.Id);
-        //        }
-        //    }
-
-
-
-        //    ////We will loop over all the images in the list and overwrite structures where it is possible
-        //    for (int i = 0; i < imageList.Count(); i++)
-        //    {
-        //        var img = imageList[i];
-
-        //        // We will only transfer HU if the images are on the same calibration curve
-        //        if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
-        //        {
-
-        //            var struSet = structureSetList[i];
-
-        //            System.Windows.MessageBox.Show("Image: " + struSet.Image.Id + " Series: " + struSet.Image.Series.Id + " Har et strukturset: " + struSet.Id);
-
-
-        //            if (struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
-        //            {
-        //                // It is not possible to set the materialstable                            
-        //                // Looking through all structures to finde the correct structure names.
-        //                foreach (var strSelected in overwrittenStructs)
-        //                {
-
-        //                    bool structureExist = false;
-        //                    foreach (var str in struSet.Structures)
-        //                    {
-        //                        if (str.Id == strSelected.Id)
-        //                        {
-        //                            structureExist = true;
-        //                        }
-        //                    }
-
-        //                    //The structure has been copied. We can now overwrite it.
-        //                    if (structureExist)
-        //                    {
-
-        //                        var str = struSet.Structures.Where(s => s.Id == strSelected.Id).First();
-
-        //                        try
-        //                        {
-        //                            double HU;
-        //                            strSelected.GetAssignedHU(out HU);
-        //                            str.SetAssignedHU(HU);
-        //                            errormessages += "HU-value: " + HU.ToString() + " assigned for structure: " + str.Id + " on image: " + img.Series.Id + "/" + img.Id + "\n";
-
-        //                        }
-        //                        catch (Exception)
-        //                        {
-        //                            errormessages += "Unable to set HU-value for structure: " + str.Id + " on image: " + img.Series.Id + "/" + img.Id + "\n";
-        //                        }
-        //                    }
-        //                    else
-        //                    {//We will now try to copy the structure!
-
-        //                        double HU;
-        //                        Structure newstru = struSet.AddStructure(strSelected.DicomType, strSelected.Id);
-        //                        newstru.SegmentVolume = strSelected.SegmentVolume; //DOES THIS WORK?
-        //                        strSelected.GetAssignedHU(out HU);
-        //                        newstru.SetAssignedHU(HU);
-        //                        errormessages += "HU-value: " + HU.ToString() + " assigned for new structure: " + newstru.Id + " on image: " + img.Series.Id + "/" + img.Id + "\n";
-        //                    }
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    Errors_txt.Text = errormessages;
-        //}
 
         /// <summary>
         /// The plans are copied to the phases and new buttons are enabled.
@@ -1060,23 +719,6 @@ namespace Evaluering4D
         /// </summary>
         private void CopyPlan_btn_Click(object sender, RoutedEventArgs e)
         {
-            ScriptInfo.Patient.BeginModifications();
-
-            if (body_chb.IsChecked == true)
-            {
-                CreateBody();
-            }
-
-            if (calib_chb.IsChecked == true)
-            {
-                CopyCalibration();
-            }
-
-            if (overw_chb.IsChecked == true)
-            {
-                OverwriteStructures();
-            }
-
             if (SelectedPlan.PlanType.ToString().Contains("Proton")) //proton
             {
                 CopyProtons();
@@ -1098,65 +740,44 @@ namespace Evaluering4D
         private void CopyPhotons()
         {
             //Name of the photonplan. TODO: this is a bit stupid, as if the name already exists the script will crash...
-            string ph_prefix = FindPrefixForPlans();
-            if (ph_prefix == null)
-            {
-                return;
-            }
+            string ph_prefix = SelectedPlan.Id.Substring(0, 4) + "_";
+            //string ph_prefix = "Pho";
 
             //The photon plans are copied and calculated
-            //The plans are added to the comboboxes.
-            //The plans are saved in the public variables.
-            //The UI is updated
             ExternalPlanSetup Plan00 = CalcPhoton(img00, rec_00, ph_prefix + "00");
-            AddPhasePlan(CT00_plan_cb, Plan00);
-            newPlan00 = Plan00;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan10 = CalcPhoton(img10, rec_10, ph_prefix + "10");
-            AddPhasePlan(CT10_plan_cb, Plan10);
-            newPlan10 = Plan10;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan20 = CalcPhoton(img20, rec_20, ph_prefix + "20");
-            AddPhasePlan(CT20_plan_cb, Plan20);
-            newPlan20 = Plan20;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan30 = CalcPhoton(img30, rec_30, ph_prefix + "30");
-            AddPhasePlan(CT30_plan_cb, Plan30);
-            newPlan30 = Plan30;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan40 = CalcPhoton(img40, rec_40, ph_prefix + "40");
-            AddPhasePlan(CT40_plan_cb, Plan40);
-            newPlan40 = Plan40;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan50 = CalcPhoton(img50, rec_50, ph_prefix + "50");
-            AddPhasePlan(CT50_plan_cb, Plan50);
-            newPlan50 = Plan50;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan60 = CalcPhoton(img60, rec_60, ph_prefix + "60");
-            AddPhasePlan(CT60_plan_cb, Plan60);
-            newPlan60 = Plan60;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan70 = CalcPhoton(img70, rec_70, ph_prefix + "70");
-            AddPhasePlan(CT70_plan_cb, Plan70);
-            newPlan70 = Plan70;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan80 = CalcPhoton(img80, rec_80, ph_prefix + "80");
-            AddPhasePlan(CT80_plan_cb, Plan80);
-            newPlan80 = Plan80;
-            AllowUIToUpdate();
-
             ExternalPlanSetup Plan90 = CalcPhoton(img90, rec_90, ph_prefix + "90");
+
+            //The plans are added to the comboboxes.
+            AddPhasePlan(CT00_plan_cb, Plan00);
+            AddPhasePlan(CT10_plan_cb, Plan10);
+            AddPhasePlan(CT20_plan_cb, Plan20);
+            AddPhasePlan(CT30_plan_cb, Plan30);
+            AddPhasePlan(CT40_plan_cb, Plan40);
+            AddPhasePlan(CT50_plan_cb, Plan50);
+            AddPhasePlan(CT60_plan_cb, Plan60);
+            AddPhasePlan(CT70_plan_cb, Plan70);
+            AddPhasePlan(CT80_plan_cb, Plan80);
             AddPhasePlan(CT90_plan_cb, Plan90);
+
+            //The plans are saved in the public variables.
+            newPlan00 = Plan00;
+            newPlan10 = Plan10;
+            newPlan20 = Plan20;
+            newPlan30 = Plan30;
+            newPlan40 = Plan40;
+            newPlan50 = Plan50;
+            newPlan60 = Plan60;
+            newPlan70 = Plan70;
+            newPlan80 = Plan80;
             newPlan90 = Plan90;
-            AllowUIToUpdate();
         }
 
         /// <summary>
@@ -1164,109 +785,46 @@ namespace Evaluering4D
         /// </summary>
         private void CopyProtons()
         {
-            string pro_prefix = FindPrefixForPlans();
-            if (pro_prefix == null)
-            {
-                return;
-            }
+            string pro_prefix = SelectedPlan.Id.Substring(0, 4) + "_";
+            //string pro_prefix = "Pro_";
 
-            //The photon plans are copied and calculated
-            //The plans are added to the comboboxes.
-            //The plans are saved in the public variables.
-            //The UI is updated
+            //The plans are created
             IonPlanSetup Plan00 = CalcProton(img00, rec_00, pro_prefix + "00");
-            AddPhasePlan(CT00_plan_cb, Plan00);
-            newPlan00 = Plan00;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan10 = CalcProton(img10, rec_10, pro_prefix + "10");
-            AddPhasePlan(CT10_plan_cb, Plan10);
-            newPlan10 = Plan10;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan20 = CalcProton(img20, rec_20, pro_prefix + "20");
-            AddPhasePlan(CT20_plan_cb, Plan20);
-            newPlan20 = Plan20;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan30 = CalcProton(img30, rec_30, pro_prefix + "30");
-            AddPhasePlan(CT30_plan_cb, Plan30);
-            newPlan30 = Plan30;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan40 = CalcProton(img40, rec_40, pro_prefix + "40");
-            AddPhasePlan(CT40_plan_cb, Plan40);
-            newPlan40 = Plan40;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan50 = CalcProton(img50, rec_50, pro_prefix + "50");
-            AddPhasePlan(CT50_plan_cb, Plan50);
-            newPlan50 = Plan50;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan60 = CalcProton(img60, rec_60, pro_prefix + "60");
-            AddPhasePlan(CT60_plan_cb, Plan60);
-            newPlan60 = Plan60;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan70 = CalcProton(img70, rec_70, pro_prefix + "70");
-            AddPhasePlan(CT70_plan_cb, Plan70);
-            newPlan70 = Plan70;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan80 = CalcProton(img80, rec_80, pro_prefix + "80");
-            AddPhasePlan(CT80_plan_cb, Plan80);
-            newPlan80 = Plan80;
-            AllowUIToUpdate();
-
             IonPlanSetup Plan90 = CalcProton(img90, rec_90, pro_prefix + "90");
+
+            //The plans are added to comboboxes
+            AddPhasePlan(CT00_plan_cb, Plan00);
+            AddPhasePlan(CT10_plan_cb, Plan10);
+            AddPhasePlan(CT20_plan_cb, Plan20);
+            AddPhasePlan(CT30_plan_cb, Plan30);
+            AddPhasePlan(CT40_plan_cb, Plan40);
+            AddPhasePlan(CT50_plan_cb, Plan50);
+            AddPhasePlan(CT60_plan_cb, Plan60);
+            AddPhasePlan(CT70_plan_cb, Plan70);
+            AddPhasePlan(CT80_plan_cb, Plan80);
             AddPhasePlan(CT90_plan_cb, Plan90);
+
+            //The plans are stored in the public variables
+            newPlan00 = Plan00;
+            newPlan10 = Plan10;
+            newPlan20 = Plan20;
+            newPlan30 = Plan30;
+            newPlan40 = Plan40;
+            newPlan50 = Plan50;
+            newPlan60 = Plan60;
+            newPlan70 = Plan70;
+            newPlan80 = Plan80;
             newPlan90 = Plan90;
-            AllowUIToUpdate();
         }
-
-        private string FindPrefixForPlans()
-        {
-            string pro_prefix = "4D_" + SelectedPlan.Id.Substring(0, 2) + "_";
-            if(NameIsNotUnique(pro_prefix))
-            {
-                return pro_prefix;
-            }
-            pro_prefix = "4D_1_" + SelectedPlan.Id.Substring(0, 2) + "_";
-            if (NameIsNotUnique(pro_prefix))
-            {
-                return pro_prefix;
-            }
-            pro_prefix = "4D_2_" + SelectedPlan.Id.Substring(0, 2) + "_";
-            if (NameIsNotUnique(pro_prefix))
-            {
-                return pro_prefix;
-            }
-            pro_prefix = "4D_3_" + SelectedPlan.Id.Substring(0, 2) + "_";
-            if (NameIsNotUnique(pro_prefix))
-            {
-                return pro_prefix;
-            }
-            pro_prefix = "4D_4_" + SelectedPlan.Id.Substring(0, 2) + "_";
-            if (NameIsNotUnique(pro_prefix))
-            {
-                return pro_prefix;
-            }
-            return null;
-        }
-
-        private bool NameIsNotUnique(string pro_prefix)
-        {
-            foreach (var pla in SelectedPlan.Course.PlanSetups)
-            {
-                if (pla.Id == pro_prefix)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
+        
         /// <summary>
         /// The plans are added to the combobox and selected.
         /// </summary>
@@ -1405,7 +963,6 @@ namespace Evaluering4D
 
             plan.Id = name;
 
-
             var res = plan.CalculateDoseWithoutPostProcessing();
             errormessages += plan.Id + ": Proton plan" + "\n";
 
@@ -1428,7 +985,7 @@ namespace Evaluering4D
         private void EvalDose_btn_Click(object sender, RoutedEventArgs e)
         {
             //The structures are imported
-            string[] structurenames = new string[4] { CTV1_cb.SelectedItem.ToString(), CTV2_cb.SelectedItem.ToString(), Spinal_cb.SelectedItem.ToString(), Spinal2_cb.SelectedItem.ToString() };
+            string[] structurenames = new string[3] { CTV1_cb.SelectedItem.ToString(), CTV2_cb.SelectedItem.ToString(), Spinal_cb.SelectedItem.ToString() };
 
             //The plans are found.
             PlanSetup CT00plan = FindPlan(0, CT00_plan_cb);
@@ -1461,7 +1018,6 @@ namespace Evaluering4D
             double D1 = 50.0;
             double D2 = 50.0;
             double D3 = 50.0;
-            double D4 = 50.0;
 
             //If they user has defined another dose it will be imported
             if (!Double.TryParse(CTV1_tb.Text, out D1))
@@ -1476,78 +1032,72 @@ namespace Evaluering4D
             {
                 D3 = 50.0;
             }
-            if (!Double.TryParse(OAR2_tb.Text, out D4))
-            {
-                D3 = 50.0;
-            }
 
             //The final doses are written as a message
             errormessages += "CTV1 prescribed dose: " + D1.ToString("0.00") + "\n";
             errormessages += "CTV2 prescribed dose: " + D2.ToString("0.00") + "\n";
             errormessages += "OAR dose for evaluation: " + D3.ToString("0.00") + "\n";
-            errormessages += "OAR dose for evaluation: " + D4.ToString("0.00") + "\n";
-
 
             // DVH results are read and saved in a variable if MU is approved. We allow a difference of less than 0.2 MU.
             // If the MU difference is too big, the rectangle will be set to red.
             if (CorrectMU(CT00plan, rec_00))
             {
-                DVHresult CT00 = new DVHresult(CT00plan, structurenames, D1, D2, D3, D4);
-                setValues(CT00, CT00_CTV1_lb, CT00_CTV2_lb, CT00_SC_lb, CT00_SC2_lb);
+                DVHresult CT00 = new DVHresult(CT00plan, structurenames, D1, D2, D3);
+                setValues(CT00, CT00_CTV1_lb, CT00_CTV2_lb, CT00_SC_lb);
             }
 
             if (CorrectMU(CT10plan, rec_10))
             {
-                DVHresult CT10 = new DVHresult(CT10plan, structurenames, D1, D2, D3, D4);
-                setValues(CT10, CT10_CTV1_lb, CT10_CTV2_lb, CT10_SC_lb, CT10_SC2_lb);
+                DVHresult CT10 = new DVHresult(CT10plan, structurenames, D1, D2, D3);
+                setValues(CT10, CT10_CTV1_lb, CT10_CTV2_lb, CT10_SC_lb);
             }
 
             if (CorrectMU(CT20plan, rec_20))
             {
-                DVHresult CT20 = new DVHresult(CT20plan, structurenames, D1, D2, D3, D4);
-                setValues(CT20, CT20_CTV1_lb, CT20_CTV2_lb, CT20_SC_lb, CT20_SC2_lb);
+                DVHresult CT20 = new DVHresult(CT20plan, structurenames, D1, D2, D3);
+                setValues(CT20, CT20_CTV1_lb, CT20_CTV2_lb, CT20_SC_lb);
             }
 
             if (CorrectMU(CT30plan, rec_30))
             {
-                DVHresult CT30 = new DVHresult(CT30plan, structurenames, D1, D2, D3, D4);
-                setValues(CT30, CT30_CTV1_lb, CT30_CTV2_lb, CT30_SC_lb, CT30_SC2_lb);
+                DVHresult CT30 = new DVHresult(CT30plan, structurenames, D1, D2, D3);
+                setValues(CT30, CT30_CTV1_lb, CT30_CTV2_lb, CT30_SC_lb);
             }
 
             if (CorrectMU(CT40plan, rec_40))
             {
-                DVHresult CT40 = new DVHresult(CT40plan, structurenames, D1, D2, D3, D4);
-                setValues(CT40, CT40_CTV1_lb, CT40_CTV2_lb, CT40_SC_lb, CT40_SC2_lb);
+                DVHresult CT40 = new DVHresult(CT40plan, structurenames, D1, D2, D3);
+                setValues(CT40, CT40_CTV1_lb, CT40_CTV2_lb, CT40_SC_lb);
             }
 
             if (CorrectMU(CT50plan, rec_50))
             {
-                DVHresult CT50 = new DVHresult(CT50plan, structurenames, D1, D2, D3, D4);
-                setValues(CT50, CT50_CTV1_lb, CT50_CTV2_lb, CT50_SC_lb, CT50_SC2_lb);
+                DVHresult CT50 = new DVHresult(CT50plan, structurenames, D1, D2, D3);
+                setValues(CT50, CT50_CTV1_lb, CT50_CTV2_lb, CT50_SC_lb);
             }
 
             if (CorrectMU(CT60plan, rec_60))
             {
-                DVHresult CT60 = new DVHresult(CT60plan, structurenames, D1, D2, D3, D4);
-                setValues(CT60, CT60_CTV1_lb, CT60_CTV2_lb, CT60_SC_lb, CT60_SC2_lb);
+                DVHresult CT60 = new DVHresult(CT60plan, structurenames, D1, D2, D3);
+                setValues(CT60, CT60_CTV1_lb, CT60_CTV2_lb, CT60_SC_lb);
             }
 
             if (CorrectMU(CT70plan, rec_70))
             {
-                DVHresult CT70 = new DVHresult(CT70plan, structurenames, D1, D2, D3, D4);
-                setValues(CT70, CT70_CTV1_lb, CT70_CTV2_lb, CT70_SC_lb, CT70_SC2_lb);
+                DVHresult CT70 = new DVHresult(CT70plan, structurenames, D1, D2, D3);
+                setValues(CT70, CT70_CTV1_lb, CT70_CTV2_lb, CT70_SC_lb);
             }
 
             if (CorrectMU(CT80plan, rec_80))
             {
-                DVHresult CT80 = new DVHresult(CT80plan, structurenames, D1, D2, D3, D4);
-                setValues(CT80, CT80_CTV1_lb, CT80_CTV2_lb, CT80_SC_lb, CT80_SC2_lb);
+                DVHresult CT80 = new DVHresult(CT80plan, structurenames, D1, D2, D3);
+                setValues(CT80, CT80_CTV1_lb, CT80_CTV2_lb, CT80_SC_lb);
             }
 
             if (CorrectMU(CT90plan, rec_90))
             {
-                DVHresult CT90 = new DVHresult(CT90plan, structurenames, D1, D2, D3, D4);
-                setValues(CT90, CT90_CTV1_lb, CT90_CTV2_lb, CT90_SC_lb, CT90_SC2_lb);
+                DVHresult CT90 = new DVHresult(CT90plan, structurenames, D1, D2, D3);
+                setValues(CT90, CT90_CTV1_lb, CT90_CTV2_lb, CT90_SC_lb);
             }
 
             //Nu kan der eksporteres DVH'er
@@ -1662,7 +1212,7 @@ namespace Evaluering4D
         /// <summary>
         /// Given the DVH results for a phase plan, the results are set in the UI.
         /// </summary>
-        private void setValues(DVHresult res, Label CTV1_lb, Label CTV2_lb, Label SC_lb, Label SC2_lb)
+        private void setValues(DVHresult res, Label CTV1_lb, Label CTV2_lb, Label SC_lb)
         {
 
             if (res.V95CTV1 == -1000)
@@ -1691,16 +1241,6 @@ namespace Evaluering4D
             {
                 SC_lb.Content = res.V50_SC.ToString("0.00");
             }
-
-            if (res.V50_SC2 == -1000)
-            {
-                SC2_lb.Content = "N/A";
-            }
-            else
-            {
-                SC2_lb.Content = res.V50_SC2.ToString("0.00");
-            }
-
         }
         
         #region DVHexport
@@ -2092,30 +1632,24 @@ public class DVHresult
     public double V95CTV1 { get; set; }
     public double V95CTV2 { get; set; }
     public double V50_SC { get; set; }
-    public double V50_SC2 { get; set; }
-
     public double D_CTV1 { get; set; }
     public double D_CTV2 { get; set; }
     public double D_OAR { get; set; }
-    public double D_OAR2 { get; set; }
-
 
     /// <summary>
     /// A class for the DVH calculations for each plan.
     /// </summary> 
-    public DVHresult(PlanSetup plan, string[] structnames, double D1, double D2, double D3, double D4)
+    public DVHresult(PlanSetup plan, string[] structnames, double D1, double D2, double D3)
     {
         Dose planDose = plan.Dose;
 
         V95CTV1 = -1000.0;
         V95CTV2 = -1000.0;
         V50_SC = -1000.0;
-        V50_SC2 = -1000.0;
 
         D_CTV1 = D1;
         D_CTV2 = D2;
         D_OAR = D3;
-        D_OAR2 = D3;
 
         if (planDose == null)
         {
@@ -2190,20 +1724,6 @@ public class DVHresult
                 else
                 {
                     V50_SC = dvh.First(d => d.DoseValue.Dose >= D_OAR).Volume;
-                }
-            }
-            if (i == 3)
-            {
-                DVHData PSC2dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.01);
-                DVHPoint[] dvh = PSC2dvh.CurveData;
-
-                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_OAR2)
-                {
-                    V50_SC2 = 0;
-                }
-                else
-                {
-                    V50_SC2 = dvh.First(d => d.DoseValue.Dose >= D_OAR2).Volume;
                 }
             }
         }
