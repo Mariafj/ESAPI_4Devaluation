@@ -41,7 +41,7 @@ using System.Reflection;
 [assembly: ESAPIScript(IsWriteable = true)]
 
 
-[assembly: AssemblyVersion("3.0.0.5")] //Skal ændres løbende
+[assembly: AssemblyVersion("3.0.0.6")] //Skal ændres løbende
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: AssemblyInformationalVersion("1.0")]
 
@@ -56,23 +56,28 @@ namespace VMS.TPS
         public void Execute(ScriptContext context, System.Windows.Window window)
         {
 
-            //The script writes in the database
-            context.Patient.BeginModifications();
+            // 19/5-22 Has been moved to the two methods of the UI that modifies the patient.
+            //context.Patient.BeginModifications();
 
             // Script window generation
             var mainControl = new Evaluering4D.UserControl1();
             window.Content = mainControl;
-            window.Width = 870;
-            window.Height = 850;
-
+            window.Width = 1050;
+            window.MaxWidth = 1050;
+            window.MinWidth = 700;
+            window.Height = 760;
+            window.MaxHeight = 760;
+            window.MinHeight = 400;
             //Patient information is saved here
             mainControl.ScriptInfo = context;
 
             //All open plans are selectable in the first combobox
             foreach (var plan in context.PlansInScope)
             {
-                mainControl.SelectPlan_cb.Items.Add(plan.Id);
-            }          
+                //Writing also the course name in case there are more plans with same name.
+                mainControl.SelectPlan_cb.Items.Add(plan.Course.Id  + "/" + plan.Id);
+            }
+
         }
     }
 }
