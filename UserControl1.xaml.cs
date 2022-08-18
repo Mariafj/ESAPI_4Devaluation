@@ -199,7 +199,7 @@ namespace Evaluering4D
         private void SelectPlan_Click(object sender, RoutedEventArgs e)
         {
             progress_lb.Content = "... Select 4D phases below and define optional DVH points in 2. Continue hereafter the script by pressing 'Select images' in 3a. or 3b. ...";
-            progress_lb.Background = Brushes.DarkSalmon;
+            //progress_lb.Background = Brushes.DarkSalmon;
             AllowUIToUpdate();
 
             //First everything is cleared.
@@ -518,10 +518,6 @@ namespace Evaluering4D
                 progress_lb.Content = "... Images are selected. Choose the plans to evaluate an press 'Evaluate plans' ...";
                 AllowUIToUpdate();
             }
-
-
-
-
 
 
             //writeYN == true => The script will create new plans on the phases
@@ -892,8 +888,7 @@ namespace Evaluering4D
 
         /// <summary>
         /// For each phase in the 4D we search for a structure set. 
-        /// If the set does not exist it is created and the body structure is copied from the nominal plan. 
-        /// If it exists the body structure is overwritten with the structure from the nominal plan if possible.
+        /// If the set does not exist it is created. 
         /// </summary>
         private string[] CreateBody()
         {
@@ -940,9 +935,9 @@ namespace Evaluering4D
                         Structure newBody = test.CreateAndSearchBody(parameters);
                         newBody.Id = "BODY";
                         structureSetList[i] = test;
-                        newBody.SegmentVolume = bodystructure.SegmentVolume;
+                        //newBody.SegmentVolume = bodystructure.SegmentVolume;
 
-                        message += "- BODY is copied. \n";
+                        message += "- BODY is created. \n";
                     }
                     else
                     {
@@ -959,7 +954,58 @@ namespace Evaluering4D
                             }
                         }
 
-                        if (findBody == true) //There is a body. We will try to copy the original body into it.
+
+                        if(findBody == false) // There was no body, we will create it before we copy the setment.
+                        {
+                            var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
+                            Structure newBody = structureSetList[i].CreateAndSearchBody(parameters);
+                            newBody.Id = "BODY";
+                            //newBody.SegmentVolume = bodystructure.SegmentVolume;
+
+                            message += "- BODY is created. \n";
+                        }
+                    }
+                }
+                report_string[i] = message;
+            
+            }
+            //Errors_txt.Text = errormessages;
+            return report_string;
+        }
+
+        private string[] CopyBody()
+        {
+            string[] report_string = new string[10];
+
+            //A list with all the images.
+            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
+
+            //Creating a list of all structuresets
+            StructureSet[] structureSetList = new StructureSet[10];
+            for (int i = 0; i < imageList.Length; i++)
+            {
+                var img = imageList.ElementAt(i);
+                //Finding the structure set for the image phase
+                foreach (var struSet in ScriptInfo.Patient.StructureSets)
+                {
+                    if (img != null && struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
+                    {
+                        //We have a structureset!
+                        structureSetList[i] = struSet;
+                    }
+                }
+            }
+
+            Structure bodystructure = SelectedPlan.StructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
+            for (int i = 0; i < 10; i++)
+            {
+                string message = "";
+
+                if (imageList.ElementAt(i) != null)
+                {
+                    foreach (var stru in structureSetList[i].Structures)
+                    {
+                        if (stru.DicomType.ToUpper() == "EXTERNAL")
                         {
                             Structure bodystructurePhase = structureSetList[i].Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
 
@@ -973,19 +1019,10 @@ namespace Evaluering4D
                                 message += "- BODY is NOT copied. \n";
                             }
                         }
-                        else // There was no body, we will create it before we copy the setment.
-                        {
-                            var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
-                            Structure newBody = structureSetList[i].CreateAndSearchBody(parameters);
-                            newBody.Id = "BODY";
-                            newBody.SegmentVolume = bodystructure.SegmentVolume;
-
-                            message += "- BODY is copied. \n";
-                        }
                     }
                 }
                 report_string[i] = message;
-            
+
             }
             //Errors_txt.Text = errormessages;
             return report_string;
@@ -1005,10 +1042,18 @@ namespace Evaluering4D
 
             if (body_chb.IsChecked == true)
             {
-                progress_lb.Content = "... creating structure sets and copying BODY ...";
+                progress_lb.Content = "... creating structure sets and BODY ...";
                 AllowUIToUpdate();
 
                 body = CreateBody();
+            }
+
+            if (copybody_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... copying BODY ...";
+                AllowUIToUpdate();
+
+                body = CopyBody();
             }
 
             if (calib_chb.IsChecked == true)
@@ -1025,7 +1070,6 @@ namespace Evaluering4D
                 overwrite = OverwriteStructures();
             }
 
-
             for (int i = 0; i < 10; i++)
             {
                 if (body[i] != "" || calib[i] != "" || overwrite[i] != "")
@@ -1038,7 +1082,6 @@ namespace Evaluering4D
             }
 
             Errors_txt.Text = errormessages;
-
 
             if (SelectedPlan.PlanType.ToString().Contains("Proton")) //proton
             {
@@ -1580,7 +1623,7 @@ namespace Evaluering4D
             Errors_txt.Text = errormessages;
 
             progress_lb.Content = "... Done! ...";
-            progress_lb.Background = Brushes.Transparent;
+            //progress_lb.Background = Brushes.Transparent;
 
         }
 
@@ -1600,7 +1643,7 @@ namespace Evaluering4D
             else
             {
                 if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != plan.StructureSet.Image.Series.ImagingDeviceId)
-                    errormessages += plan.Id + " is not on the same calibrationsurve as the baseplan \n";
+                    errormessages += plan.Id + " is not on the same calibration curve as the baseplan \n";
 
                 for (int i = 0; i < plan.Beams.Count(); i++)
                 {
@@ -1732,7 +1775,6 @@ namespace Evaluering4D
 
         }
 
-        #region DVHexport
         /// <summary>
         /// All DVHes are exported for the main plan and the new phases.
         /// If uncertainty doses exist for the main plan, they will be exported as well.
@@ -1771,471 +1813,8 @@ namespace Evaluering4D
             folderToSave = System.IO.Path.GetDirectoryName(sf.FileName);
 
             Directory.CreateDirectory(folderToSave + "\\" + "dvh_exports");
-
-            //MessageBox.Show("Vi gemmer her: " + folderToSave + "\\" + "dvh_exports");
-
-            //Loopeing over planer
-            for (int i = 0; i < allPlans.Count(); i++)
-            {
-                string filename = allPlans[i].Id;
-                //MessageBox.Show(filename);
-
-                string firstLine = "Nominal dose. Plan id: " + allPlans[i].Id;
-                //Data skal nu samles i en stor matrice
-                int largestDVH = FindLargestDVH(allPlans[i], dvhresolution);
-                //MessageBox.Show("Længste DVH fundet til " + largestDVH.ToString());
-
-                int numbOfStructs = FindNumberOfStructs(allPlans[i]);
-                //MessageBox.Show("Antal strukturer fundet til: " + numbOfStructs.ToString());
-
-                //Matricen kan nu oprettes da vi ved hvor stor den skal være
-                double[,] dvhList = new double[largestDVH, numbOfStructs + 1]; //MULTI
-                //MessageBox.Show("Tom liste oprettet til strukturer");
-                FillValues(dvhList, allPlans[i], largestDVH, numbOfStructs, dvhresolution); //MULTI
-                //MessageBox.Show("Struktrnavne fyldt i");
-
-                string[] idList = new string[numbOfStructs + 1];
-                FillIDs(idList, allPlans[i]);
-
-                double[] volList = new double[numbOfStructs];
-                FillIVols(volList, allPlans[i]);
-
-                double[] minList = new double[numbOfStructs];
-                double[] maxList = new double[numbOfStructs];
-                double[] meanList = new double[numbOfStructs];
-
-                FillIminmaxmean(minList, maxList, meanList, allPlans[i], dvhresolution);
-
-                WriteDVHfile(folderToSave + "\\" + "dvh_exports", filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList); //MULTI
-            }
-
-            //Nu tjekker vi om den nominelle plan har usikkerhedsscenarier. Hvis ja, så skal disse også udskrives på samme måde
-            if (allPlans[0].PlanUncertainties.Count() != 0)
-            {
-                foreach (var uncert in allPlans[0].PlanUncertainties)
-                {
-                    if (uncert.Dose == null) continue;
-
-                    string filename = allPlans[0].Id.Substring(0, 4) + "_" + uncert.Id;
-                    string firstLine = "Uncertainty scenario: " + uncert.DisplayName + " to nominal plan: " + allPlans[0].Id;
-                    //Data skal nu samles i en stor matrice
-                    int largestDVH = FindLargestDVH(allPlans[0], uncert, dvhresolution);
-                    int numbOfStructs = FindNumberOfStructs(allPlans[0]);
-
-                    //Matricen kan nu oprettes da vi ved hvor stor den skal være
-                    double[,] dvhList = new double[largestDVH, numbOfStructs + 1];
-                    string[] idList = new string[numbOfStructs + 1];
-
-                    double[] volList = new double[numbOfStructs];
-                    FillIVols(volList, allPlans[0]);
-
-                    double[] minList = new double[numbOfStructs];
-                    double[] maxList = new double[numbOfStructs];
-                    double[] meanList = new double[numbOfStructs];
-
-                    FillIminmaxmean(minList, maxList, meanList, allPlans[0], dvhresolution);
-
-                    FillValues(dvhList, allPlans[0], largestDVH, numbOfStructs, uncert, dvhresolution);
-                    FillIDs(idList, allPlans[0]);
-
-                    WriteDVHfile(folderToSave + "\\" + "dvh_exports", filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Calculates the min, max and mean dose values for all structures in a plan and aded to three lists with the correct format.
-        /// </summary>
-        private void FillIminmaxmean(double[] minList, double[] maxList, double[] meanList, PlanSetup planSetup, double dvhresolution)
-        {
-            int countStruct = 0;
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-
-                DVHData dvhdata = planSetup.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.Relative, dvhresolution);
-                minList[countStruct] = dvhdata.MinDose.Dose;
-                maxList[countStruct] = dvhdata.MaxDose.Dose;
-                meanList[countStruct] = dvhdata.MeanDose.Dose;
-
-                countStruct++;
-            }
-        }
-
-        /// <summary>
-        /// Calculates the volume of all structures in a plan and added to the volList with the correct format.
-        /// </summary>
-        private void FillIVols(double[] volList, PlanSetup planSetup)
-        {
-
-            int countStruct = 0;
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-
-                volList[countStruct] = planSetup.StructureSet.Structures.ElementAt(j).Volume;
-                countStruct++;
-            }
-        }
-
-        /// <summary>
-        /// The file is now written and saved for the given plan or uncertaintyscenario by collecting all the lists for the IDs, DVH values, mean, max, mean doses and volumes.
-        /// </summary>
-        private void WriteDVHfile(string v, string filename, double[,] dvhList, string[] idList, int numbOfStructs, int largestDVH, string firstLine, double[] volList, double[] minList, double[] maxList, double[] meanList)
-        {
-            string lines = firstLine + Environment.NewLine;
-
-            //Struktur ider tilføjes
-            string temp = "";
-            for (int p = 0; p < numbOfStructs + 1; p++)
-            {
-                temp += idList[p] + "\t";
-            }
-            lines += temp + Environment.NewLine;
-
-            temp = "volume (cc) \t";
-            for (int p = 0; p < numbOfStructs; p++)
-            {
-                temp += volList[p].ToString("0.00") + "\t";
-            }
-            lines += temp + Environment.NewLine;
-
-            temp = "Min Dose (Gy) \t";
-            for (int p = 0; p < numbOfStructs; p++)
-            {
-                temp += minList[p].ToString("0.00") + "\t";
-            }
-            lines += temp + Environment.NewLine;
-
-            temp = "Max Dose (Gy) \t";
-            for (int p = 0; p < numbOfStructs; p++)
-            {
-                temp += maxList[p].ToString("0.00") + "\t";
-            }
-            lines += temp + Environment.NewLine;
-
-            temp = "Mean Dose (Gy) \t";
-            for (int p = 0; p < numbOfStructs; p++)
-            {
-                temp += meanList[p].ToString("0.00") + "\t";
-            }
-            lines += temp + Environment.NewLine;
-
-            //Tal tilføjes
-            for (int h = 0; h < largestDVH; h++)
-            {
-                temp = "";
-
-                for (int p = 0; p < numbOfStructs + 1; p++)
-                {
-                    temp += dvhList[h, p].ToString("0.00") + "\t";
-                }
-                lines += temp + Environment.NewLine;
-            }
-
-            File.WriteAllText(v + "\\" + filename + ".txt", lines);
-        }
-
-        /// <summary>
-        /// DVH values are filled into the correct format defined by the dvhList.
-        /// </summary>
-        private void FillValues(double[,] dvhList, PlanSetup planSetup, int largestDVH, int numbOfStructs, double dvhresolution)
-        {
-            //Første kolonne fyldes med dosisværdier
-            dvhList[0, 0] = 0.0;
-            for (int j = 1; j < largestDVH; j++)
-            {
-                dvhList[j, 0] = dvhList[j - 1, 0] + dvhresolution;
-            }
-
-
-            //Her starter vi ved 1, da den første kolonne er dosis
-            //Nu finder vi alle de strukturer der skal fyldes i.
-            int countStruct = 1;
-            //double resolutiondvh = 0.1;
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-                DVHData dvhdata = planSetup.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.Relative, dvhresolution);
-                DVHPoint[] dvh = dvhdata.CurveData;
-                if (dvh.Count() == 0) continue;
-
-                for (int p = 0; p < dvh.Count(); p++)
-                {
-                    dvhList[p, countStruct] = dvh[p].Volume;
-                }
-                countStruct++;
-            }
-        }
-
-        /// <summary>
-        /// DVH values are filled into the correct format defined by the dvhList.
-        /// </summary>
-        private void FillValues(double[,] dvhList, PlanSetup planSetup, int largestDVH, int numbOfStructs, PlanUncertainty uncert, double dvhresolution)
-        {
-            //Første kolonne fyldes med dosisværdier
-            dvhList[0, 0] = 0.0;
-            for (int j = 1; j < largestDVH; j++)
-            {
-                dvhList[j, 0] = dvhList[j - 1, 0] + 0.1;
-            }
-
-            //Resten fyldes med 0'er. Burde ikke være nødvendigt
-            //for (int k = 0; k < largestDVH; k++)
-            //{
-            //    for (int m = 0; m < numbOfStructs; m++)
-            //    {
-            //        dvhList[k, m + 1] = 0.0;
-            //    }
-            //}
-
-            //Her starter vi ved 1, da den første kolonne er dosis
-            //Nu finder vi alle de strukturer der skal fyldes i.
-            int countStruct = 1;
-            //double resolutiondvh = 0.1;
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-                DVHData dvhdata = uncert.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.Relative, dvhresolution);
-                DVHPoint[] dvh = dvhdata.CurveData;
-                if (dvh.Count() == 0) continue;
-
-                for (int p = 0; p < dvh.Count(); p++)
-                {
-                    dvhList[p, countStruct] = dvh[p].Volume;
-                }
-                countStruct++;
-            }
-        }
-
-        /// <summary>
-        /// Structure ids are filled into the correct format defined by the idList.
-        /// </summary>
-        private void FillIDs(string[] idList, PlanSetup planSetup)
-        {
-            idList[0] = "Dose (Gy)";
-
-            int countStruct = 1; //Her starter vi ved 1, da den første kolonne er dosis
-                                 //Nu finder vi alle de strukturer der skal fyldes i.
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-
-                idList[countStruct] = planSetup.StructureSet.Structures.ElementAt(j).Id;
-                countStruct++;
-            }
-        }
-
-        /// <summary>
-        /// Determining the number of structures with a contour.
-        /// </summary>
-        private int FindNumberOfStructs(PlanSetup planSetup)
-        {
-            //Looper over strukturer da vi lige skal tælle.
-            int numb = 0;
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-                numb++;
-            }
-            return numb;
-        }
-
-        /// <summary>
-        /// Determining the largest DVH curve for all relevant structures.
-        /// </summary>
-        private int FindLargestDVH(PlanSetup planSetup, double dvhresolution)
-        {
-            //Looper over strukturer da vi lige skal tælle.
-            int dvhsize = 0;
-            //double resolutiondvh = 0.1;
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-
-                //MessageBox.Show(planSetup.StructureSet.Structures.ElementAt(j).Id + " har dicomtypen : " + planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower());
-
-                DVHData dvhdata = planSetup.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.Relative, dvhresolution);
-                DVHPoint[] dvh = dvhdata.CurveData;
-
-                if (dvh.Count() >= dvhsize)
-                    dvhsize = dvh.Count();
-            }
-            return dvhsize;
-        }
-
-        /// <summary>
-        /// Determining the largest DVH curve for all relevant structures.
-        /// </summary>
-        private int FindLargestDVH(PlanSetup planSetup, PlanUncertainty uncert, double dvhresolution)
-        {
-            //Looper over strukturer da vi lige skal tælle.
-            int dvhsize = 0;
-            //double resolutiondvh = 0.1;
-            for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
-            {
-                if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
-                {
-                    continue;
-                }
-
-                DVHData dvhdata = uncert.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.Relative, dvhresolution);
-                DVHPoint[] dvh = dvhdata.CurveData;
-
-                if (dvh.Count() >= dvhsize)
-                    dvhsize = dvh.Count();
-            }
-            return dvhsize;
-        }
-        #endregion DVHexport
-
-    }
-}
-
-/// <summary>
-/// A class for the DVH calculations.
-/// </summary>
-public class DVHresult
-{
-    public double V95CTV1 { get; set; }
-    public double V95CTV2 { get; set; }
-    public double V50_SC { get; set; }
-    public double V50_SC2 { get; set; }
-
-    public double D_CTV1 { get; set; }
-    public double D_CTV2 { get; set; }
-    public double D_OAR { get; set; }
-    public double D_OAR2 { get; set; }
-
-
-    /// <summary>
-    /// A class for the DVH calculations for each plan.
-    /// </summary> 
-    public DVHresult(PlanSetup plan, string[] structnames, double D1, double D2, double D3, double D4)
-    {
-        Dose planDose = plan.Dose;
-
-        V95CTV1 = -1000.0;
-        V95CTV2 = -1000.0;
-        V50_SC = -1000.0;
-        V50_SC2 = -1000.0;
-
-        D_CTV1 = D1;
-        D_CTV2 = D2;
-        D_OAR = D3;
-        D_OAR2 = D3;
-
-        if (planDose == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < structnames.Count(); i++)
-        {
-            if (structnames[i] == null || structnames[i] == "Skip")
-            {
-                continue;
-            }
-
-            //Vi leder efter strukturen
-            bool noStruct = false;
-            foreach (var test in plan.StructureSet.Structures)
-            {
-                if (test.Id == structnames[i])
-                {
-                    noStruct = true;
-                }
-            }
-
-            if (noStruct == false)
-            {
-                continue;
-            }
-
-            //CTV
-            if (i == 0)
-            {
-                DVHData CTV1dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.Relative, 0.01);
-                DVHPoint[] dvh = CTV1dvh.CurveData;
-
-                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_CTV1 * 0.95)
-                {
-                    V95CTV1 = 0;
-                }
-                else
-                {
-                    V95CTV1 = dvh.First(d => d.DoseValue.Dose >= D_CTV1 * 0.95).Volume;
-                }
-
-            }
-
-            if (i == 1)
-            {
-                DVHData CTV2dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.Relative, 0.01);
-                DVHPoint[] dvh = CTV2dvh.CurveData;
-
-                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_CTV2 * 0.95)
-                {
-                    V95CTV2 = 0;
-                }
-                else
-                {
-                    V95CTV2 = dvh.First(d => d.DoseValue.Dose >= D_CTV2 * 0.95).Volume;
-                }
-
-            }
-
-            //Spinal Cord
-            if (i == 2)
-            {
-                DVHData PSCdvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.01);
-                DVHPoint[] dvh = PSCdvh.CurveData;
-
-                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_OAR)
-                {
-                    V50_SC = 0;
-                }
-                else
-                {
-                    V50_SC = dvh.First(d => d.DoseValue.Dose >= D_OAR).Volume;
-                }
-            }
-            if (i == 3)
-            {
-                DVHData PSC2dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.01);
-                DVHPoint[] dvh = PSC2dvh.CurveData;
-
-                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_OAR2)
-                {
-                    V50_SC2 = 0;
-                }
-                else
-                {
-                    V50_SC2 = dvh.First(d => d.DoseValue.Dose >= D_OAR2).Volume;
-                }
-            }
+            ExportableDVHs dvhs = new ExportableDVHs(allPlans, folderToSave + "\\" + "dvh_exports",dvhresolution);
+            dvhs.SaveAll();
         }
     }
 }
-

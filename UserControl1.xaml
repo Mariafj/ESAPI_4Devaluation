@@ -50,13 +50,13 @@
                     <Label Content="2. Define structures and dose levels:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="224" FontWeight="Bold"/>
 
 
-                    <Label Content="CTV1 id:" HorizontalAlignment="Left" Height="26" Margin="12,25,0,0" VerticalAlignment="Top" Width="60"/>
+                    <Label Content="TAR1 id:" HorizontalAlignment="Left" Height="26" Margin="12,25,0,0" VerticalAlignment="Top" Width="60"/>
                     <ComboBox x:Name="CTV1_cb" HorizontalAlignment="Left" Height="26" Margin="64,25,0,0" VerticalAlignment="Top" Width="110"/>
                     <Label Content="Dose:" HorizontalAlignment="Left" Height="26" Margin="180,25,0,0" VerticalAlignment="Top" Width="42"/>
                     <TextBox x:Name="CTV1_tb" HorizontalAlignment="Left" Height="26" Margin="226,25,0,0" TextWrapping="Wrap" Text="50.0" Width="60" VerticalAlignment="Top" />
                     <Label Content="Gy" HorizontalAlignment="Left" Height="26" Margin="292,25,0,0" VerticalAlignment="Top" Width="26"/>
 
-                    <Label Content="CTV2 id:" HorizontalAlignment="Left" Height="26" Margin="12,60,0,0" VerticalAlignment="Top" Width="62"/>
+                    <Label Content="TAR2 id:" HorizontalAlignment="Left" Height="26" Margin="12,60,0,0" VerticalAlignment="Top" Width="62"/>
                     <ComboBox x:Name="CTV2_cb" HorizontalAlignment="Left" Height="26" Margin="64,60,0,0" VerticalAlignment="Top" Width="110"/>
                     <Label Content="Dose:" HorizontalAlignment="Left" Height="26" Margin="180,60,0,0" VerticalAlignment="Top" Width="42"/>
                     <TextBox x:Name="CTV2_tb" HorizontalAlignment="Left" Height="26" Margin="226,60,0,0" TextWrapping="Wrap" Text="50.0" Width="60" VerticalAlignment="Top"  />
@@ -98,14 +98,15 @@
                     <Label Content="Messages and warnings:" HorizontalAlignment="Left" Margin="0,0,0,0" VerticalAlignment="Top" Width="175" FontWeight="Bold" Height="26"/>
                     <TextBox x:Name="Errors_txt" HorizontalAlignment="Left" Height="305" TextWrapping="Wrap" VerticalAlignment="Top" Width="208" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" Margin="10,31,0,0" RenderTransformOrigin="0.553,0.542"/>
                 </Grid>
-                <Grid HorizontalAlignment="Left" Height="134" Margin="714,50,0,0" VerticalAlignment="Top" Width="305">
+                <Grid HorizontalAlignment="Left" Height="150" Margin="714,50,0,0" VerticalAlignment="Top" Width="305">
 
                     <Button x:Name="SelectImages_btn" Content="Select images" HorizontalAlignment="Left" Height="28" Margin="27,24,0,0" VerticalAlignment="Top" Width="105" Click="SelectImages_btn_Click" IsEnabled="False"/>
                     <Button x:Name="CopyPlan_btn" Content="Create plans" HorizontalAlignment="Left" Height="28" Margin="152,24,0,0" VerticalAlignment="Top" Width="106" Click="CopyPlan_btn_Click" IsEnabled="False"/>
                     <Label Content="3b. Create and evaluate plans:" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="201" FontWeight="Bold"/>
-                    <CheckBox x:Name="body_chb" Content="Create structuresets and body outline" HorizontalAlignment="Left" Height="22" Margin="32,60,0,0" VerticalAlignment="Top" Width="226" IsChecked="true"/>
-                    <CheckBox x:Name="calib_chb" Content="Set calibration curves" HorizontalAlignment="Left" Height="22" Margin="32,80,0,0" VerticalAlignment="Top" Width="226" IsChecked="true"/>
-                    <CheckBox x:Name="overw_chb" Content="Copy and overwrite structures" HorizontalAlignment="Left" Height="22" Margin="32,100,0,0" VerticalAlignment="Top" Width="226" IsChecked="true"/>
+                    <CheckBox x:Name="body_chb" Content="Create missing structuresets and body outlines" HorizontalAlignment="Left" Height="22" Margin="28,60,0,0" VerticalAlignment="Top" Width="273" IsChecked="true"/>
+                    <CheckBox x:Name="calib_chb" Content="Set calibration curves" HorizontalAlignment="Left" Height="22" Margin="28,101,0,0" VerticalAlignment="Top" Width="226" IsChecked="true"/>
+                    <CheckBox x:Name="overw_chb" Content="Copy and overwrite all overwritten structures" HorizontalAlignment="Left" Height="22" Margin="28,121,0,0" VerticalAlignment="Top" Width="263" IsChecked="true"/>
+                    <CheckBox x:Name="copybody_chb" Content="Copy body outline from primary plan" HorizontalAlignment="Left" Height="22" Margin="28,80,0,0" VerticalAlignment="Top" Width="226" IsChecked="true"/>
 
                     <!--<Button x:Name="PrepareImages_btn" Content="Prepare images" HorizontalAlignment="Left" Height="28" Margin="133,30,0,0" VerticalAlignment="Top" Width="105" IsEnabled="False" Click="PrepareImages_btn_Click"/>-->
                 </Grid>
