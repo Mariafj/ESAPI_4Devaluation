@@ -59,6 +59,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AdjustPhaseImages.cs" />
     <Compile Include="DVHresult.cs" />
     <Compile Include="Evaluering4D.cs" />
     <Compile Include="ExportableDVHs.cs" />

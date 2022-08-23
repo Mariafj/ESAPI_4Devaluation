@@ -678,357 +678,6 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// This method can transfer HU-overwritten structures to the 4D phases and overwrite them.
-        /// </summary>
-        private string[] OverwriteStructures()
-        {
-
-            string[] report_string = new string[10];
-            
-            
-            // If something goes wrong we will flag it and write a message
-            bool errorCopy = false;
-
-            // All the phases are collected in a list so we can loop
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-
-            // A checklist is used to check if an image has a structure set or not, or if the image is skipped and therefor is null.
-            // The structure sets are collected in a list as we cannot get the structure from the image.
-            int[] checklist = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            StructureSet[] structureSetList = new StructureSet[10];
-            for (int i = 0; i < imageList.Length; i++)
-            {
-                var img = imageList.ElementAt(i);
-
-                // Searching through all structure sets in the patient to find the correct sets.
-                foreach (var struSet in ScriptInfo.Patient.StructureSets)
-                {
-                    if (img != null && struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID && img.Series.Study.Id == SelectedPlan.Series.Study.Id)
-                    {
-                        //We have a structureset!
-                        checklist[i] = 1;
-                        structureSetList[i] = struSet;
-                    }
-                }
-            }
-
-            //Finding HU-overwritten structures in the original plan
-            List<Structure> overwrittenStructs = new List<Structure>();
-            foreach (var stru in SelectedPlan.StructureSet.Structures)
-            {
-                double HU;
-                if (stru.GetAssignedHU(out HU))
-                {
-                    overwrittenStructs.Add(stru);
-                }
-            }
-
-            // Looping over all images and copying structures if needed and hereafter HU-overwriting if the calibration curve is the same as the original plan.
-            for (int i = 0; i < imageList.Count(); i++)
-            {
-                bool dicomTypesChanged = false;
-                var img = imageList[i];
-
-                string message = "";
-
-                // Checking if the image is skipped and checking if the calibration curves are the same
-                if (img != null && SelectedPlan.StructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
-                {
-                    var struSet = structureSetList[i];
-
-                    // Looking through all structures to finde the correct structure names.
-                    foreach (var strSelected in overwrittenStructs)
-                    {
-                        bool structureExist = false;
-                        foreach (var str in struSet.Structures)
-                        {
-                            if (str.Id == strSelected.Id)
-                            {
-                                structureExist = true;
-                            }
-                        }
-
-                        //If the stucture alread exist, it will be HU-overwritten.
-                        if (structureExist)
-                        {
-                            var str = struSet.Structures.Where(s => s.Id == strSelected.Id).First();
-
-                            double HU;
-                            strSelected.GetAssignedHU(out HU);
-
-                            try
-                            {
-                                str.SetAssignedHU(HU);
-                                message += "- " + HU.ToString() + " HU assigned: " + str.Id + "\n";
-                            }
-                            catch (Exception)
-                            {
-                                if (str.GetAssignedHU(out double HUs) && HUs == HU)
-                                {
-                                    message += "- HU is correct: " + str.Id + "\n";
-
-                                }
-                                else
-                                {
-                                    message += "- Unable to assign HU: " + str.Id + "\n";
-                                    errorCopy = true;
-                                }
-                            }
-                        }
-                        // The structure does not exist and we must create it. Due to an issue with ESAPI this is done by two try/catch methods.
-                        else
-                        {
-                            double HU;
-                            strSelected.GetAssignedHU(out HU);
-
-                            try
-                            {
-                                Structure newstru = struSet.AddStructure(strSelected.DicomType, strSelected.Id);
-                                newstru.SegmentVolume = strSelected.SegmentVolume;
-                                newstru.SetAssignedHU(HU);
-                                message += "- " + HU.ToString() + " HU assigned: " + newstru.Id + "\n";
-                            }
-                            catch (Exception)
-                            {
-                                // There is an issue in ESAPI that transfered structures can loose there Dicom Type and for some reason not be transfered here.
-                                // This is handled by creating a new structure for the couch and setting a dicom type.
-                                // This can however cause problems if overwritten structures are overlapping. As the priority is then changed.
-                                try
-                                {
-                                    Structure newstru = struSet.AddStructure("CONTROL", strSelected.Id + "_copy");
-                                    newstru.SegmentVolume = strSelected.SegmentVolume;
-                                    newstru.SetAssignedHU(HU);
-                                    message += "- " + HU.ToString() + " HU assigned: " + newstru.Id + "\n";
-                                    dicomTypesChanged = true; 
-                                }
-                                catch (Exception)
-                                {
-                                    errorCopy = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                else if (img != null)
-                {
-                    errorCopy = true;
-                }
-                
-                if (dicomTypesChanged)
-                {
-                    message += "- Some DICOM types have been changed. Check if the WET is correct if overwritten structures are overlapping. \n";
-                }
-
-
-                if (errorCopy)
-                {
-                    message += "- ERROR: structure(s) not copied/assigned \n";
-                }
-
-
-                report_string[i] = message;
-
-            }
-            //Errors_txt.Text = errormessages;
-            return report_string;
-
-        }
-
-        /// <summary>
-        /// The calibration curve is set to the same device as for the nominal plan if it is possible.
-        /// </summary>
-        private string[] CopyCalibration()
-        {
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-
-            string[] report_string = new string[10];
-            int phasecount = 0;
-
-            // The imagingDevice (aka the calibration curve) is compared. 
-            // If it is different we will try to change it. 
-            // If it cannot be changed the user will recieve a message about it.
-            foreach (var img in imageList)
-            {
-
-                string message = "";
-
-                if (img != null && SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
-                {
-                    try
-                    {
-                        img.Series.SetImagingDevice(SelectedPlan.StructureSet.Image.Series.ImagingDeviceId);
-
-
-                        message += "- Imaging device is set" + "\n";
-
-                    }
-                    catch (Exception)
-                    {
-                        if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
-                        {
-                            
-                            message += "- Unable to set imaging device" + "\n";
-                        }
-                    }
-                }
-                else if (img != null)
-                {
-                    
-                    message += "- Imaging device is correct" + "\n";
-                }
-
-                report_string[phasecount] = message;
-                phasecount++;
-
-            }
-            //Errors_txt.Text = errormessages;
-            return report_string;
-
-        }
-
-        /// <summary>
-        /// For each phase in the 4D we search for a structure set. 
-        /// If the set does not exist it is created. 
-        /// </summary>
-        private string[] CreateBody()
-        {
-            string[] report_string = new string[10];
-
-            //A list with all the images.
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-            StructureSet[] structureSetList = new StructureSet[10];
-
-            int[] checklist = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
-            //MAY 2022
-            //Are we missing structuresets on the images?
-            for (int i = 0; i < imageList.Length; i++)
-            {
-                var img = imageList.ElementAt(i);
-                //Finding the structure set for the image phase
-                foreach (var struSet in ScriptInfo.Patient.StructureSets)
-                {
-                    if (img != null && struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
-                    {
-                        //We have a structureset!
-                        checklist[i] = 1;
-                        structureSetList[i] = struSet;
-                    }
-                }
-            }
-
-            // Missing structure sets will be created and a body is copied from the original scan.
-            Structure bodystructure = SelectedPlan.StructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
-            for (int i = 0; i < checklist.Count(); i++)
-            {
-                string message = "";
-
-                if (imageList.ElementAt(i) != null)
-                {
-                    if (checklist[i] != 1)
-                    {
-                        var img = imageList.ElementAt(i);
-                        StructureSet test = img.CreateNewStructureSet();
-                        test.Id = img.Id;
-
-                        var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
-                        Structure newBody = test.CreateAndSearchBody(parameters);
-                        newBody.Id = "BODY";
-                        structureSetList[i] = test;
-                        //newBody.SegmentVolume = bodystructure.SegmentVolume;
-
-                        message += "- BODY is created. \n";
-                    }
-                    else
-                    {
-                        var img = imageList.ElementAt(i);
-
-                        // We need to check if there is a body structure in the structure set.
-                        bool findBody = false;
-
-                        foreach (var stru in structureSetList[i].Structures)
-                        {
-                            if (stru.DicomType.ToUpper() == "EXTERNAL")
-                            {
-                                findBody = true;
-                            }
-                        }
-
-
-                        if(findBody == false) // There was no body, we will create it before we copy the setment.
-                        {
-                            var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
-                            Structure newBody = structureSetList[i].CreateAndSearchBody(parameters);
-                            newBody.Id = "BODY";
-                            //newBody.SegmentVolume = bodystructure.SegmentVolume;
-
-                            message += "- BODY is created. \n";
-                        }
-                    }
-                }
-                report_string[i] = message;
-            
-            }
-            //Errors_txt.Text = errormessages;
-            return report_string;
-        }
-
-        private string[] CopyBody()
-        {
-            string[] report_string = new string[10];
-
-            //A list with all the images.
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-
-            //Creating a list of all structuresets
-            StructureSet[] structureSetList = new StructureSet[10];
-            for (int i = 0; i < imageList.Length; i++)
-            {
-                var img = imageList.ElementAt(i);
-                //Finding the structure set for the image phase
-                foreach (var struSet in ScriptInfo.Patient.StructureSets)
-                {
-                    if (img != null && struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID)
-                    {
-                        //We have a structureset!
-                        structureSetList[i] = struSet;
-                    }
-                }
-            }
-
-            Structure bodystructure = SelectedPlan.StructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
-            for (int i = 0; i < 10; i++)
-            {
-                string message = "";
-
-                if (imageList.ElementAt(i) != null)
-                {
-                    foreach (var stru in structureSetList[i].Structures)
-                    {
-                        if (stru.DicomType.ToUpper() == "EXTERNAL")
-                        {
-                            Structure bodystructurePhase = structureSetList[i].Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
-
-                            try
-                            {
-                                bodystructurePhase.SegmentVolume = bodystructure.SegmentVolume;
-                                message += "- BODY is copied. \n";
-                            }
-                            catch (Exception)
-                            {
-                                message += "- BODY is NOT copied. \n";
-                            }
-                        }
-                    }
-                }
-                report_string[i] = message;
-
-            }
-            //Errors_txt.Text = errormessages;
-            return report_string;
-        }
-
-        /// <summary>
         /// The plans are copied to the phases and new buttons are enabled.
         /// The copy process depends on the plan type.
         /// </summary>
@@ -1040,12 +689,16 @@ namespace Evaluering4D
             string[] calib = new string[10];
             string[] overwrite = new string[10];
 
+            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
+
+            AdjustPhaseImages adjustPhaseImages = new AdjustPhaseImages(imageList,ScriptInfo,SelectedPlan);
+
             if (body_chb.IsChecked == true)
             {
                 progress_lb.Content = "... creating structure sets and BODY ...";
                 AllowUIToUpdate();
 
-                body = CreateBody();
+                body = adjustPhaseImages.CreateBody();
             }
 
             if (copybody_chb.IsChecked == true)
@@ -1053,21 +706,21 @@ namespace Evaluering4D
                 progress_lb.Content = "... copying BODY ...";
                 AllowUIToUpdate();
 
-                body = CopyBody();
+                body = adjustPhaseImages.CopyBody();
             }
 
             if (calib_chb.IsChecked == true)
             {
                 progress_lb.Content = "... Setting calibration curves ...";
                 AllowUIToUpdate();
-                calib = CopyCalibration();
+                calib = adjustPhaseImages.CopyCalibration();
             }
 
             if (overw_chb.IsChecked == true)
             {
                 progress_lb.Content = "... Copying and overwriting structures ...";
                 AllowUIToUpdate();
-                overwrite = OverwriteStructures();
+                overwrite = adjustPhaseImages.OverwriteStructures();
             }
 
             for (int i = 0; i < 10; i++)
