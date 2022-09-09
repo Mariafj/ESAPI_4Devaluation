@@ -153,6 +153,7 @@ namespace Evaluering4D
             CTV2_cb.Items.Clear();
             Spinal_cb.Items.Clear();
             Spinal2_cb.Items.Clear();
+            Spinal3_cb.Items.Clear();
 
             CT00_cb.Items.Clear();
             CT10_cb.Items.Clear();
@@ -223,6 +224,7 @@ namespace Evaluering4D
             CTV2_cb.Items.Add("Skip");
             Spinal_cb.Items.Add("Skip");
             Spinal2_cb.Items.Add("Skip");
+            Spinal3_cb.Items.Add("Skip");
 
             IEnumerable<Structure> sortedStructs = mainPlan.StructureSet.Structures.OrderBy(s => s.Id);
             foreach (var struc in sortedStructs)
@@ -231,12 +233,16 @@ namespace Evaluering4D
                 CTV2_cb.Items.Add(struc.Id);
                 Spinal_cb.Items.Add(struc.Id);
                 Spinal2_cb.Items.Add(struc.Id);
+                Spinal3_cb.Items.Add(struc.Id);
+
             }
             //"Skip" is the default structure choice
             CTV1_cb.SelectedItem = CTV1_cb.Items[0];
             CTV2_cb.SelectedItem = CTV1_cb.Items[0];
             Spinal_cb.SelectedItem = Spinal_cb.Items[0];
             Spinal2_cb.SelectedItem = Spinal2_cb.Items[0];
+            Spinal3_cb.SelectedItem = Spinal2_cb.Items[0];
+
 
             //The comboboxes with CT images are filled. We will try to select only relevant images.
             //NB THIS SELECTION WILL DEPEND ON THE COMMENTS SENT FROM THE CT SCANNER!
@@ -1149,7 +1155,7 @@ namespace Evaluering4D
             AllowUIToUpdate();
 
             //The structures are imported
-            string[] structurenames = new string[4] { CTV1_cb.SelectedItem.ToString(), CTV2_cb.SelectedItem.ToString(), Spinal_cb.SelectedItem.ToString(), Spinal2_cb.SelectedItem.ToString() };
+            string[] structurenames = new string[5] { CTV1_cb.SelectedItem.ToString(), CTV2_cb.SelectedItem.ToString(), Spinal_cb.SelectedItem.ToString(), Spinal2_cb.SelectedItem.ToString(), Spinal3_cb.SelectedItem.ToString() };
 
             //The plans are found.
             PlanSetup CT00plan = FindPlan(0, CT00_plan_cb);
@@ -1183,6 +1189,7 @@ namespace Evaluering4D
             double D2 = 50.0;
             double D3 = 50.0;
             double D4 = 50.0;
+            double D5 = 50.0;
 
             //If they user has defined another dose it will be imported
             if (!Double.TryParse(CTV1_tb.Text, out D1))
@@ -1199,9 +1206,12 @@ namespace Evaluering4D
             }
             if (!Double.TryParse(OAR2_tb.Text, out D4))
             {
-                D3 = 50.0;
+                D4 = 50.0;
             }
-
+            if (!Double.TryParse(OAR2_tb.Text, out D5))
+            {
+                D5 = 50.0;
+            }
             //The final doses are written as a message
             //errormessages += "CTV1 prescribed dose: " + D1.ToString("0.00") + "\n";
             //errormessages += "CTV2 prescribed dose: " + D2.ToString("0.00") + "\n";
@@ -1213,62 +1223,62 @@ namespace Evaluering4D
             // If the MU difference is too big, the rectangle will be set to red.
             if (CorrectMU(CT00plan, rec_00))
             {
-                DVHresult CT00 = new DVHresult(CT00plan, structurenames, D1, D2, D3, D4);
-                setValues(CT00, CT00_CTV1_lb, CT00_CTV2_lb, CT00_SC_lb, CT00_SC2_lb);
+                DVHresult CT00 = new DVHresult(CT00plan, structurenames, D1, D2, D3, D4,D5);
+                setValues(CT00, CT00_CTV1_lb, CT00_CTV2_lb, CT00_SC_lb, CT00_SC2_lb, CT00_SC3_lb);
             }
 
             if (CorrectMU(CT10plan, rec_10))
             {
-                DVHresult CT10 = new DVHresult(CT10plan, structurenames, D1, D2, D3, D4);
-                setValues(CT10, CT10_CTV1_lb, CT10_CTV2_lb, CT10_SC_lb, CT10_SC2_lb);
+                DVHresult CT10 = new DVHresult(CT10plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT10, CT10_CTV1_lb, CT10_CTV2_lb, CT10_SC_lb, CT10_SC2_lb, CT10_SC3_lb);
             }
 
             if (CorrectMU(CT20plan, rec_20))
             {
-                DVHresult CT20 = new DVHresult(CT20plan, structurenames, D1, D2, D3, D4);
-                setValues(CT20, CT20_CTV1_lb, CT20_CTV2_lb, CT20_SC_lb, CT20_SC2_lb);
+                DVHresult CT20 = new DVHresult(CT20plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT20, CT20_CTV1_lb, CT20_CTV2_lb, CT20_SC_lb, CT20_SC2_lb, CT20_SC3_lb);
             }
 
             if (CorrectMU(CT30plan, rec_30))
             {
-                DVHresult CT30 = new DVHresult(CT30plan, structurenames, D1, D2, D3, D4);
-                setValues(CT30, CT30_CTV1_lb, CT30_CTV2_lb, CT30_SC_lb, CT30_SC2_lb);
+                DVHresult CT30 = new DVHresult(CT30plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT30, CT30_CTV1_lb, CT30_CTV2_lb, CT30_SC_lb, CT30_SC2_lb, CT30_SC3_lb);
             }
 
             if (CorrectMU(CT40plan, rec_40))
             {
-                DVHresult CT40 = new DVHresult(CT40plan, structurenames, D1, D2, D3, D4);
-                setValues(CT40, CT40_CTV1_lb, CT40_CTV2_lb, CT40_SC_lb, CT40_SC2_lb);
+                DVHresult CT40 = new DVHresult(CT40plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT40, CT40_CTV1_lb, CT40_CTV2_lb, CT40_SC_lb, CT40_SC2_lb, CT40_SC3_lb);
             }
 
             if (CorrectMU(CT50plan, rec_50))
             {
-                DVHresult CT50 = new DVHresult(CT50plan, structurenames, D1, D2, D3, D4);
-                setValues(CT50, CT50_CTV1_lb, CT50_CTV2_lb, CT50_SC_lb, CT50_SC2_lb);
+                DVHresult CT50 = new DVHresult(CT50plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT50, CT50_CTV1_lb, CT50_CTV2_lb, CT50_SC_lb, CT50_SC2_lb, CT50_SC3_lb);
             }
 
             if (CorrectMU(CT60plan, rec_60))
             {
-                DVHresult CT60 = new DVHresult(CT60plan, structurenames, D1, D2, D3, D4);
-                setValues(CT60, CT60_CTV1_lb, CT60_CTV2_lb, CT60_SC_lb, CT60_SC2_lb);
+                DVHresult CT60 = new DVHresult(CT60plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT60, CT60_CTV1_lb, CT60_CTV2_lb, CT60_SC_lb, CT60_SC2_lb, CT60_SC3_lb);
             }
 
             if (CorrectMU(CT70plan, rec_70))
             {
-                DVHresult CT70 = new DVHresult(CT70plan, structurenames, D1, D2, D3, D4);
-                setValues(CT70, CT70_CTV1_lb, CT70_CTV2_lb, CT70_SC_lb, CT70_SC2_lb);
+                DVHresult CT70 = new DVHresult(CT70plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT70, CT70_CTV1_lb, CT70_CTV2_lb, CT70_SC_lb, CT70_SC2_lb, CT70_SC3_lb);
             }
 
             if (CorrectMU(CT80plan, rec_80))
             {
-                DVHresult CT80 = new DVHresult(CT80plan, structurenames, D1, D2, D3, D4);
-                setValues(CT80, CT80_CTV1_lb, CT80_CTV2_lb, CT80_SC_lb, CT80_SC2_lb);
+                DVHresult CT80 = new DVHresult(CT80plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT80, CT80_CTV1_lb, CT80_CTV2_lb, CT80_SC_lb, CT80_SC2_lb, CT80_SC3_lb);
             }
 
             if (CorrectMU(CT90plan, rec_90))
             {
-                DVHresult CT90 = new DVHresult(CT90plan, structurenames, D1, D2, D3, D4);
-                setValues(CT90, CT90_CTV1_lb, CT90_CTV2_lb, CT90_SC_lb, CT90_SC2_lb);
+                DVHresult CT90 = new DVHresult(CT90plan, structurenames, D1, D2, D3, D4, D5);
+                setValues(CT90, CT90_CTV1_lb, CT90_CTV2_lb, CT90_SC_lb, CT90_SC2_lb, CT90_SC3_lb);
             }
 
             //Nu kan der eksporteres DVH'er
@@ -1387,7 +1397,7 @@ namespace Evaluering4D
         /// <summary>
         /// Given the DVH results for a phase plan, the results are set in the UI.
         /// </summary>
-        private void setValues(DVHresult res, Label CTV1_lb, Label CTV2_lb, Label SC_lb, Label SC2_lb)
+        private void setValues(DVHresult res, Label CTV1_lb, Label CTV2_lb, Label SC_lb, Label SC2_lb, Label SC3_lb)
         {
 
             if (res.V95CTV1 == -1000)
@@ -1424,6 +1434,15 @@ namespace Evaluering4D
             else
             {
                 SC2_lb.Content = res.V50_SC2.ToString("0.00");
+            }
+
+            if (res.V50_SC3 == -1000)
+            {
+                SC3_lb.Content = "N/A";
+            }
+            else
+            {
+                SC3_lb.Content = res.V50_SC3.ToString("0.00");
             }
 
         }

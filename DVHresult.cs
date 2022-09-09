@@ -41,17 +41,18 @@ public class DVHresult
     public double V95CTV2 { get; set; }
     public double V50_SC { get; set; }
     public double V50_SC2 { get; set; }
+    public double V50_SC3 { get; set; }
 
     public double D_CTV1 { get; set; }
     public double D_CTV2 { get; set; }
     public double D_OAR { get; set; }
     public double D_OAR2 { get; set; }
-
+    public double D_OAR3 { get; set; }
 
     /// <summary>
     /// A class for the DVH calculations for each plan.
     /// </summary> 
-    public DVHresult(PlanSetup plan, string[] structnames, double D1, double D2, double D3, double D4)
+    public DVHresult(PlanSetup plan, string[] structnames, double D1, double D2, double D3, double D4, double D5)
     {
         Dose planDose = plan.Dose;
 
@@ -59,11 +60,13 @@ public class DVHresult
         V95CTV2 = -1000.0;
         V50_SC = -1000.0;
         V50_SC2 = -1000.0;
+        V50_SC3 = -1000.0;
 
         D_CTV1 = D1;
         D_CTV2 = D2;
         D_OAR = D3;
         D_OAR2 = D4;
+        D_OAR3 = D5;
 
         if (planDose == null)
         {
@@ -152,6 +155,20 @@ public class DVHresult
                 else
                 {
                     V50_SC2 = dvh.First(d => d.DoseValue.Dose >= D_OAR2).Volume;
+                }
+            }
+            if (i == 4)
+            {
+                DVHData PSC3dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.01);
+                DVHPoint[] dvh = PSC3dvh.CurveData;
+
+                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_OAR3)
+                {
+                    V50_SC3 = 0;
+                }
+                else
+                {
+                    V50_SC3 = dvh.First(d => d.DoseValue.Dose >= D_OAR3).Volume;
                 }
             }
         }

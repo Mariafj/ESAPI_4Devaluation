@@ -41,7 +41,7 @@ using System.Reflection;
 [assembly: ESAPIScript(IsWriteable = true)]
 
 
-[assembly: AssemblyVersion("3.0.0.8")] //Skal ændres løbende
+[assembly: AssemblyVersion("3.0.0.9")] //Skal ændres løbende
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: AssemblyInformationalVersion("1.0")]
 
@@ -62,11 +62,11 @@ namespace VMS.TPS
             // Script window generation
             var mainControl = new Evaluering4D.UserControl1();
             window.Content = mainControl;
-            window.Width = 1050;
-            window.MaxWidth = 1050;
+            window.Width = 1060;
+            window.MaxWidth = 1060;
             window.MinWidth = 700;
-            window.Height = 760;
-            window.MaxHeight = 760;
+            window.Height = 780;
+            window.MaxHeight = 780;
             window.MinHeight = 400;
             //Patient information is saved here
             mainControl.ScriptInfo = context;
