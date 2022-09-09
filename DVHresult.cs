@@ -63,7 +63,7 @@ public class DVHresult
         D_CTV1 = D1;
         D_CTV2 = D2;
         D_OAR = D3;
-        D_OAR2 = D3;
+        D_OAR2 = D4;
 
         if (planDose == null)
         {

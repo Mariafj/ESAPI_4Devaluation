@@ -41,7 +41,7 @@ using System.Reflection;
 [assembly: ESAPIScript(IsWriteable = true)]
 
 
-[assembly: AssemblyVersion("3.0.0.7")] //Skal ændres løbende
+[assembly: AssemblyVersion("3.0.0.8")] //Skal ændres løbende
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: AssemblyInformationalVersion("1.0")]
 
