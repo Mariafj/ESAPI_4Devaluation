@@ -45,7 +45,7 @@
         <Grid Background="#FFFFF8F8" Margin="0,0,0,0">
             <Grid Margin="0,0,0,0">
 
-                <Label Content="09/09/22 MFJ" HorizontalAlignment="Left" Height="27" Margin="921,16,0,0" VerticalAlignment="Top" Width="98"/>
+                <Label Content="16/11/22 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
                 <Grid HorizontalAlignment="Left" Height="195" Margin="198,50,0,0" VerticalAlignment="Top" Width="334">
                     <Label Content="2. Define structures and dose levels:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="224" FontWeight="Bold"/>
 
@@ -80,7 +80,6 @@
                     <Label Content="Gy" HorizontalAlignment="Left" Height="26" Margin="292,169,0,0" VerticalAlignment="Top" Width="26"/>
                 </Grid>
 
-
                 <Grid HorizontalAlignment="Left" Height="97" VerticalAlignment="Top" Width="167" Margin="8,50,0,0" Grid.ColumnSpan="2">
 
                     <Label Content="1. Select plan:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="132" FontWeight="Bold"/>
@@ -88,15 +87,12 @@
                     <Button x:Name="SelectPlan" Content="Select plan" HorizontalAlignment="Left" Height="28" Margin="18,60,0,0" VerticalAlignment="Top" Width="105" Click="SelectPlan_Click"/>
                 </Grid>
 
-
                 <Grid HorizontalAlignment="Left" Height="96" Margin="537,50,0,0" VerticalAlignment="Top" Width="163">
                     <Label Content="3a. Evaluate existing plans:" HorizontalAlignment="Left" Height="30" VerticalAlignment="Top" Width="164" FontWeight="Bold"/>
                     <Button x:Name="SelectImagesE_btn" Content="Select images" HorizontalAlignment="Left" Height="28" Margin="27,23,0,0" VerticalAlignment="Top" Width="105" IsEnabled="False" Click="SelectImagesE_btn_Click"/>
                     <Button x:Name="EvalDoseE_btn" Content="Evaluate plans" HorizontalAlignment="Left" Height="28" Margin="27,58,0,0" VerticalAlignment="Top" Width="105" IsEnabled="False" Click="EvalDose_btn_Click"/>
                 </Grid>
                 <!--<TextBlock x:Name="Errors_txt" HorizontalAlignment="Left" Height="217" Margin="505,96,0,0" Grid.RowSpan="2" TextWrapping="Wrap" VerticalAlignment="Top" Width="296"/>-->
-
-
 
 
                 <Grid HorizontalAlignment="Left" Height="304" Margin="785,305,0,0" VerticalAlignment="Top" Width="234">
@@ -116,7 +112,6 @@
                     <!--<Button x:Name="PrepareImages_btn" Content="Prepare images" HorizontalAlignment="Left" Height="28" Margin="133,30,0,0" VerticalAlignment="Top" Width="105" IsEnabled="False" Click="PrepareImages_btn_Click"/>-->
                 </Grid>
                 <Grid HorizontalAlignment="Left" Height="424" Margin="10,291,0,0" VerticalAlignment="Top" Width="793">
-
 
                     <ComboBox x:Name="CT00_cb" HorizontalAlignment="Left" Height="25" Margin="54,40,0,0" VerticalAlignment="Top" Width="145"/>
                     <ComboBox x:Name="CT10_cb" HorizontalAlignment="Left" Height="25" Margin="54,78,0,0" VerticalAlignment="Top" Width="145"/>
@@ -198,8 +193,6 @@
                     <Label x:Name="CT80_SC3_lb" Content="0" HorizontalAlignment="Left" Height="25" Margin="697,358,0,0" VerticalAlignment="Top" Width="62"/>
                     <Label x:Name="CT90_SC3_lb" Content="0" HorizontalAlignment="Left" Height="25" Margin="697,398,0,0" VerticalAlignment="Top" Width="62"/>
 
-
-
                     <ComboBox x:Name="CT00_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,39,0,0" VerticalAlignment="Top" Width="124"/>
                     <ComboBox x:Name="CT10_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,79,0,0" VerticalAlignment="Top" Width="124"/>
                     <ComboBox x:Name="CT20_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,119,0,0" VerticalAlignment="Top" Width="124"/>
@@ -233,7 +226,6 @@
                 <Label Content="4D evaluation script" HorizontalAlignment="Left" Height="47" Margin="9,10,0,0" VerticalAlignment="Top" Width="523" FontWeight="Bold" FontSize="24" Grid.ColumnSpan="2"/>
             </Grid>
             <Label x:Name="progress_lb" Content="" HorizontalAlignment="Center" Height="34" Margin="0,255,0,0" VerticalAlignment="Top" Width="999" FontSize="16"/>
-
         </Grid>
     </ScrollViewer>
 </UserControl>

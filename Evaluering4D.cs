@@ -56,9 +56,6 @@ namespace VMS.TPS
         public void Execute(ScriptContext context, System.Windows.Window window)
         {
 
-            // 19/5-22 Has been moved to the two methods of the UI that modifies the patient.
-            //context.Patient.BeginModifications();
-
             // Script window generation
             var mainControl = new Evaluering4D.UserControl1();
             window.Content = mainControl;
@@ -78,6 +75,12 @@ namespace VMS.TPS
                 mainControl.SelectPlan_cb.Items.Add(plan.Course.Id  + "/" + plan.Id);
             }
 
+            foreach (var sumplan in context.PlanSumsInScope)
+            {
+                //Sumplans can also be evaluated
+                mainControl.SelectPlan_cb.Items.Add(sumplan.Course.Id + "/" + sumplan.Id);
+
+            }
         }
     }
 }

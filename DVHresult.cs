@@ -173,5 +173,128 @@ public class DVHresult
             }
         }
     }
+
+
+    public DVHresult(PlanSum plan, string[] structnames, double D1, double D2, double D3, double D4, double D5)
+    {
+        Dose planDose = plan.Dose;
+
+        V95CTV1 = -1000.0;
+        V95CTV2 = -1000.0;
+        V50_SC = -1000.0;
+        V50_SC2 = -1000.0;
+        V50_SC3 = -1000.0;
+
+        D_CTV1 = D1;
+        D_CTV2 = D2;
+        D_OAR = D3;
+        D_OAR2 = D4;
+        D_OAR3 = D5;
+
+        if (planDose == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < structnames.Count(); i++)
+        {
+            if (structnames[i] == null || structnames[i] == "Skip")
+            {
+                continue;
+            }
+
+            //Vi leder efter strukturen
+            bool noStruct = false;
+            foreach (var test in plan.StructureSet.Structures)
+            {
+                if (test.Id == structnames[i])
+                {
+                    noStruct = true;
+                }
+            }
+
+            if (noStruct == false)
+            {
+                continue;
+            }
+
+            //CTV
+            if (i == 0)
+            {
+                DVHData CTV1dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.Relative, 0.01);
+                DVHPoint[] dvh = CTV1dvh.CurveData;
+
+                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_CTV1 * 0.95)
+                {
+                    V95CTV1 = 0;
+                }
+                else
+                {
+                    V95CTV1 = dvh.First(d => d.DoseValue.Dose >= D_CTV1 * 0.95).Volume;
+                }
+
+            }
+
+            if (i == 1)
+            {
+                DVHData CTV2dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.Relative, 0.01);
+                DVHPoint[] dvh = CTV2dvh.CurveData;
+
+                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_CTV2 * 0.95)
+                {
+                    V95CTV2 = 0;
+                }
+                else
+                {
+                    V95CTV2 = dvh.First(d => d.DoseValue.Dose >= D_CTV2 * 0.95).Volume;
+                }
+
+            }
+
+            //Spinal Cord
+            if (i == 2)
+            {
+                DVHData PSCdvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.01);
+                DVHPoint[] dvh = PSCdvh.CurveData;
+
+                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_OAR)
+                {
+                    V50_SC = 0;
+                }
+                else
+                {
+                    V50_SC = dvh.First(d => d.DoseValue.Dose >= D_OAR).Volume;
+                }
+            }
+            if (i == 3)
+            {
+                DVHData PSC2dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.01);
+                DVHPoint[] dvh = PSC2dvh.CurveData;
+
+                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_OAR2)
+                {
+                    V50_SC2 = 0;
+                }
+                else
+                {
+                    V50_SC2 = dvh.First(d => d.DoseValue.Dose >= D_OAR2).Volume;
+                }
+            }
+            if (i == 4)
+            {
+                DVHData PSC3dvh = plan.GetDVHCumulativeData(plan.StructureSet.Structures.First(s => s.Id == structnames[i]), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.01);
+                DVHPoint[] dvh = PSC3dvh.CurveData;
+
+                if (dvh.Count() == 0 || dvh.Max(d => d.DoseValue.Dose) < D_OAR3)
+                {
+                    V50_SC3 = 0;
+                }
+                else
+                {
+                    V50_SC3 = dvh.First(d => d.DoseValue.Dose >= D_OAR3).Volume;
+                }
+            }
+        }
+    }
 }
 

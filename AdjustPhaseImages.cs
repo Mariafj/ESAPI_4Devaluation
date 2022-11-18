@@ -30,14 +30,17 @@ namespace Evaluering4D
     {
         public Image[] ImageList { get; set; }
         public ScriptContext ScriptInfo { get; set; }
-        public PlanSetup SelectedPlan { get; set; } //The main plan that is to be copied to all phases
+        public StructureSet SelectedStructureSet { get; set; } //The main structureset with the main plan.
 
-        public AdjustPhaseImages(Image[] imageList,ScriptContext scriptInfo, PlanSetup selectedPlan )
+
+
+        public AdjustPhaseImages(Image[] imageList,ScriptContext scriptInfo, StructureSet selectedSet )
         {
             ImageList = imageList;
             ScriptInfo = scriptInfo;
-            SelectedPlan = selectedPlan;
+            SelectedStructureSet = selectedSet;
         }
+
 
         /// <summary>
         /// This method can transfer HU-overwritten structures to the 4D phases and overwrite them.
@@ -65,7 +68,7 @@ namespace Evaluering4D
                 // Searching through all structure sets in the patient to find the correct sets.
                 foreach (var struSet in ScriptInfo.Patient.StructureSets)
                 {
-                    if (img != null && struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID && img.Series.Study.Id == SelectedPlan.Series.Study.Id)
+                    if (img != null && struSet.Image.Id == img.Id && struSet.Image.Series.UID == img.Series.UID && img.Series.Study.Id == SelectedStructureSet.Image.Series.Study.Id)
                     {
                         //We have a structureset!
                         checklist[i] = 1;
@@ -76,7 +79,7 @@ namespace Evaluering4D
 
             //Finding HU-overwritten structures in the original plan
             List<Structure> overwrittenStructs = new List<Structure>();
-            foreach (var stru in SelectedPlan.StructureSet.Structures)
+            foreach (var stru in SelectedStructureSet.Structures)
             {
                 double HU;
                 if (stru.GetAssignedHU(out HU))
@@ -94,7 +97,7 @@ namespace Evaluering4D
                 string message = "";
 
                 // Checking if the image is skipped and checking if the calibration curves are the same
-                if (img != null && SelectedPlan.StructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
+                if (img != null && SelectedStructureSet.Image.Series.ImagingDeviceId == img.Series.ImagingDeviceId)
                 {
                     var struSet = structureSetList[i];
 
@@ -212,11 +215,11 @@ namespace Evaluering4D
 
                 string message = "";
 
-                if (img != null && SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
+                if (img != null && SelectedStructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
                 {
                     try
                     {
-                        img.Series.SetImagingDevice(SelectedPlan.StructureSet.Image.Series.ImagingDeviceId);
+                        img.Series.SetImagingDevice(SelectedStructureSet.Image.Series.ImagingDeviceId);
 
 
                         message += "- Imaging device is set" + "\n";
@@ -224,7 +227,7 @@ namespace Evaluering4D
                     }
                     catch (Exception)
                     {
-                        if (SelectedPlan.StructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
+                        if (SelectedStructureSet.Image.Series.ImagingDeviceId != img.Series.ImagingDeviceId)
                         {
 
                             message += "- Unable to set imaging device" + "\n";
@@ -276,7 +279,7 @@ namespace Evaluering4D
             }
 
             // Missing structure sets will be created and a body is copied from the original scan.
-            Structure bodystructure = SelectedPlan.StructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
+            Structure bodystructure = SelectedStructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
             for (int i = 0; i < checklist.Count(); i++)
             {
                 string message = "";
@@ -289,7 +292,7 @@ namespace Evaluering4D
                         StructureSet test = img.CreateNewStructureSet();
                         test.Id = img.Id;
 
-                        var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
+                        var parameters = SelectedStructureSet.GetDefaultSearchBodyParameters();
                         Structure newBody = test.CreateAndSearchBody(parameters);
                         newBody.Id = "BODY";
                         structureSetList[i] = test;
@@ -315,7 +318,7 @@ namespace Evaluering4D
 
                         if (findBody == false) // There was no body, we will create it before we copy the setment.
                         {
-                            var parameters = SelectedPlan.StructureSet.GetDefaultSearchBodyParameters();
+                            var parameters = SelectedStructureSet.GetDefaultSearchBodyParameters();
                             Structure newBody = structureSetList[i].CreateAndSearchBody(parameters);
                             newBody.Id = "BODY";
                             //newBody.SegmentVolume = bodystructure.SegmentVolume;
@@ -351,7 +354,7 @@ namespace Evaluering4D
                 }
             }
 
-            Structure bodystructure = SelectedPlan.StructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
+            Structure bodystructure = SelectedStructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
             for (int i = 0; i < 10; i++)
             {
                 string message = "";
