@@ -51,7 +51,14 @@ public class DVHresult
 
     /// <summary>
     /// A class for the DVH calculations for each plan.
-    /// </summary> 
+    /// </summary>
+    /// <param name="plan">The plansetup to evaluate</param>
+    /// <param name="structnames">A list of structures to evaluate</param>
+    /// <param name="D1">Dosevalue for target1</param>
+    /// <param name="D2">Dosevalue for target2</param>
+    /// <param name="D3">Dosevalue for OAR1</param>
+    /// <param name="D4">Dosevalue for OAR2</param>
+    /// <param name="D5">Dosevalue for OAR3</param>
     public DVHresult(PlanSetup plan, string[] structnames, double D1, double D2, double D3, double D4, double D5)
     {
         Dose planDose = plan.Dose;
@@ -80,7 +87,7 @@ public class DVHresult
                 continue;
             }
 
-            //Vi leder efter strukturen
+            //We will search for the structure
             bool noStruct = false;
             foreach (var test in plan.StructureSet.Structures)
             {
@@ -174,7 +181,16 @@ public class DVHresult
         }
     }
 
-
+    /// <summary>
+    /// A class for the DVH calculations for each plan sum.
+    /// </summary>
+    /// <param name="plan">The plan sum setup to evaluate</param>
+    /// <param name="structnames">A list of structures to evaluate</param>
+    /// <param name="D1">Dosevalue for target1</param>
+    /// <param name="D2">Dosevalue for target2</param>
+    /// <param name="D3">Dosevalue for OAR1</param>
+    /// <param name="D4">Dosevalue for OAR2</param>
+    /// <param name="D5">Dosevalue for OAR3</param>
     public DVHresult(PlanSum plan, string[] structnames, double D1, double D2, double D3, double D4, double D5)
     {
         Dose planDose = plan.Dose;

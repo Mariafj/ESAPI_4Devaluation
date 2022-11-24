@@ -26,14 +26,21 @@ using VMS.TPS.Common.Model.API;
 
 namespace Evaluering4D
 {
+    /// <summary>
+    /// A class that can adjust the calibration curves for an image, overwrite and copy structures and create a body.
+    /// </summary>
     internal class AdjustPhaseImages
     {
         public Image[] ImageList { get; set; }
         public ScriptContext ScriptInfo { get; set; }
         public StructureSet SelectedStructureSet { get; set; } //The main structureset with the main plan.
 
-
-
+        /// <summary>
+        /// Constructs an object with the list of images to adjust, the script info on the patient and the structureset belonging to the image
+        /// </summary>
+        /// <param name="imageList"></param>
+        /// <param name="scriptInfo"></param>
+        /// <param name="selectedSet"></param>
         public AdjustPhaseImages(Image[] imageList,ScriptContext scriptInfo, StructureSet selectedSet )
         {
             ImageList = imageList;
@@ -41,20 +48,15 @@ namespace Evaluering4D
             SelectedStructureSet = selectedSet;
         }
 
-
         /// <summary>
         /// This method can transfer HU-overwritten structures to the 4D phases and overwrite them.
         /// </summary>
         public string[] OverwriteStructures()
         {
-
             string[] report_string = new string[10];
-
 
             // If something goes wrong we will flag it and write a message
             bool errorCopy = false;
-
-
 
             // A checklist is used to check if an image has a structure set or not, or if the image is skipped and therefor is null.
             // The structure sets are collected in a list as we cannot get the structure from the image.
@@ -194,7 +196,6 @@ namespace Evaluering4D
                 report_string[i] = message;
 
             }
-            //Errors_txt.Text = errormessages;
             return report_string;
 
         }
@@ -244,7 +245,6 @@ namespace Evaluering4D
                 phasecount++;
 
             }
-            //Errors_txt.Text = errormessages;
             return report_string;
 
         }
@@ -296,7 +296,6 @@ namespace Evaluering4D
                         Structure newBody = test.CreateAndSearchBody(parameters);
                         newBody.Id = "BODY";
                         structureSetList[i] = test;
-                        //newBody.SegmentVolume = bodystructure.SegmentVolume;
 
                         message += "- BODY is created. \n";
                     }
@@ -321,7 +320,6 @@ namespace Evaluering4D
                             var parameters = SelectedStructureSet.GetDefaultSearchBodyParameters();
                             Structure newBody = structureSetList[i].CreateAndSearchBody(parameters);
                             newBody.Id = "BODY";
-                            //newBody.SegmentVolume = bodystructure.SegmentVolume;
 
                             message += "- BODY is created. \n";
                         }
@@ -382,7 +380,6 @@ namespace Evaluering4D
                 report_string[i] = message;
 
             }
-            //Errors_txt.Text = errormessages;
             return report_string;
         }
     }

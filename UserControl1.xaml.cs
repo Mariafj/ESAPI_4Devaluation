@@ -59,10 +59,13 @@ namespace Evaluering4D
     {
         //Several public parameters are used in methods and functions.
         public ScriptContext ScriptInfo; //The database content for the selected patient.
-        public PlanSetup SelectedPlan; //The main plan that is to be copied to all phases
 
         public string errormessages = ""; //A string with all messages and errors for the user.
 
+        public StructureSet MainStructureSet; //Independent on if a sumplan or a single plan is chosen
+
+        // Single plans
+        public PlanSetup SelectedPlan; //The main plan that is to be copied to all phases
         //As all the new plans that are copied cannot be saved before the user presses "save", therefore they are kept in these public variables.
         public PlanSetup newPlan00;
         public PlanSetup newPlan10;
@@ -75,13 +78,9 @@ namespace Evaluering4D
         public PlanSetup newPlan80;
         public PlanSetup newPlan90;
 
-
-        // Plansum extention
-
-        //The main plan SUM that is to be copied to all phases
-        public PlanSum SelectedPlanSum; //The main plan that is to be copied to all phases
-        public StructureSet MainStructureSet;
-
+        // Sum plans
+        public PlanSum SelectedPlanSum; //The main sum plan that is to be copied to all phases
+        //As all the new plans that are copied cannot be saved before the user presses "save", therefore they are kept in these public variables.
         public PlanSum newPlanSum00;
         public PlanSum newPlanSum10;
         public PlanSum newPlanSum20;
@@ -92,7 +91,6 @@ namespace Evaluering4D
         public PlanSum newPlanSum70;
         public PlanSum newPlanSum80;
         public PlanSum newPlanSum90;
-
 
         //The 10 phases have a set of possible series UIDS. This is used later to find the correct image, as the names and image UIDs are not unique.
         public List<string> UID_00 = new List<string> { };
@@ -131,6 +129,10 @@ namespace Evaluering4D
         private void clearAllPublicsAndCombos()
         {
             //Publics
+            SelectedPlan = null;
+            SelectedPlanSum = null;
+            MainStructureSet = null;
+
             UID_00.Clear();
             UID_10.Clear();
             UID_20.Clear();
@@ -163,7 +165,6 @@ namespace Evaluering4D
             newPlan70 = null;
             newPlan80 = null;
             newPlan90 = null;
-
 
             // PlanSum extention
             newPlanSum00 = null;
@@ -208,7 +209,6 @@ namespace Evaluering4D
             CT70_plan_cb.Items.Clear();
             CT80_plan_cb.Items.Clear();
             CT90_plan_cb.Items.Clear();
-
         }
 
         void AllowUIToUpdate()
@@ -226,6 +226,12 @@ namespace Evaluering4D
                                           new Action(delegate { }));
         }
 
+        /// <summary>
+        /// Based in a string course id and a string plan id, we determine if the plan is a sumplan or not.
+        /// </summary>
+        /// <param name="courseid">The course id</param>
+        /// <param name="planid">The plan  id</param>
+        /// <returns></returns>
         private bool SumPlanDetected(string courseid, string planid)
         {
             foreach (var sumplan in ScriptInfo.PlanSumsInScope)
@@ -238,14 +244,12 @@ namespace Evaluering4D
             return false;
         }
 
-
         /// <summary>
-        /// The user selects the main plan and comboboxes for structure selection and image selection are filled.
+        /// The user selects the main plan or sumplan and comboboxes for structure selection and image selection are filled.
         /// </summary>
         private void SelectPlan_Click(object sender, RoutedEventArgs e)
         {
             progress_lb.Content = "... Select 4D phases below and define optional DVH points in 2. Continue hereafter the script by pressing 'Select images' in 3a. or 3b. ...";
-            //progress_lb.Background = Brushes.DarkSalmon;
             AllowUIToUpdate();
 
             //First everything is cleared.
@@ -254,27 +258,22 @@ namespace Evaluering4D
             //Buttons that are not to be used are disabled.
             EvalDoseE_btn.IsEnabled = false;
             CopyPlan_btn.IsEnabled = false;
-            //PrepareImages_btn.IsEnabled = false;
             ExportDVH_btn.IsEnabled = false;
 
-            //The treatment plan is defined and saved in the public variable.
+            //The selected plan is found.
             string[] planname = SelectPlan_cb.SelectedItem.ToString().Split('/');
             string courseid = planname.First();
             string planid = planname.Last();
 
-            //The selected plan is saved as a global variable.
-            if (SumPlanDetected(courseid, planid) == true) 
+            //The selected plan is saved as a global variable and we determine if it is a sumplan or a single plan.
+            if (SumPlanDetected(courseid, planid) == true)  //sum plan
             {
-                //System.Windows.MessageBox.Show("Sumplan selected");
-
                 PlanSum mainPlanSum = ScriptInfo.Patient.Courses.Where(c => c.Id == courseid).FirstOrDefault().PlanSums.Where(p => p.Id == planid).FirstOrDefault();
                 SelectedPlanSum = mainPlanSum;
                 MainStructureSet = mainPlanSum.StructureSet;
             }
-            else
+            else //single plan
             {
-                //System.Windows.MessageBox.Show("Not sumplan selected");
-
                 PlanSetup mainPlan = ScriptInfo.Patient.Courses.Where(c => c.Id == courseid).FirstOrDefault().PlanSetups.Where(p => p.Id == planid).FirstOrDefault();
                 SelectedPlan = mainPlan;
                 MainStructureSet = mainPlan.StructureSet;
@@ -296,13 +295,13 @@ namespace Evaluering4D
                 Spinal2_cb.Items.Add(struc.Id);
                 Spinal3_cb.Items.Add(struc.Id);
             }
+
             //"Skip" is the default structure choice
             CTV1_cb.SelectedItem = CTV1_cb.Items[0];
             CTV2_cb.SelectedItem = CTV1_cb.Items[0];
             Spinal_cb.SelectedItem = Spinal_cb.Items[0];
             Spinal2_cb.SelectedItem = Spinal2_cb.Items[0];
             Spinal3_cb.SelectedItem = Spinal2_cb.Items[0];
-
 
             //The comboboxes with CT images are filled. We will try to select only relevant images.
             //NB THIS SELECTION WILL DEPEND ON THE COMMENTS SENT FROM THE CT SCANNER!
@@ -316,6 +315,7 @@ namespace Evaluering4D
             CT70_cb.Items.Add("skip");
             CT80_cb.Items.Add("skip");
             CT90_cb.Items.Add("skip");
+
             //All 3D images in the study belonging to the primary planning image are now looped through.
             //This is a 16.1 specific method...
             //When the images are a potential match, their series UID is saved for later use, as this is a unique number.
@@ -488,17 +488,20 @@ namespace Evaluering4D
                 CT90_cb.SelectedItem = CT90_cb.Items[0];
             }
 
-            // Buttens for finalizing the image choice is activated
+            // Buttens for finalizing the image choice are activated
             SelectImages_btn.IsEnabled = true;
             SelectImagesE_btn.IsEnabled = true;
 
             //Errormessages are written in the UI.
             Errors_txt.Text = errormessages;
         }
-
         /// <summary>
-        /// Finds the correct 3D image given a seried UID list and a string defining the selected phase.
+        /// Finds the correct 3D image given a seried UID list and a string defining the selected phase
         /// </summary>
+        /// <param name="uid_list">A list of UIDs</param>
+        /// <param name="v">The image id</param>
+        /// <param name="phase">The phase identification string</param>
+        /// <returns></returns>
         private VMS.TPS.Common.Model.API.Image FindCorrectImage(List<string> uid_list, string v, string phase)
         {
             //All images with the correct name are selected but only one is needed.
@@ -566,27 +569,23 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// The images are selected and saved to the public variables.
+        /// The images are selected and saved to the public variables
         /// If there are plans calculated on the images, they will be added to the plan-comboboxes.
         /// The function destinquished between the writable version and the non-writable by using the bookean writeYN
         /// </summary>
+        /// <param name="writeYN">Boolean determining if the script will evaluate or create 4D plans</param>
         private void SelectImages(bool writeYN)
         {
-
-            if (writeYN == true)
+            if (writeYN == true) //The script will create new plans on the phases
             {
                 progress_lb.Content = "... Images are selected. Press 'Create plans' to continue the script ...";
                 AllowUIToUpdate();
             }
-            else
+            else //The script will evaluate already created plans on the phases
             {
                 progress_lb.Content = "... Images are selected. Choose the plans to evaluate an press 'Evaluate plans' ...";
                 AllowUIToUpdate();
             }
-
-
-            //writeYN == true => The script will create new plans on the phases
-            //writeYN == false => The script will evaluate already created plans on the phases
 
             //The selected images are found by using the function "findCorrectImage".
             img00 = FindCorrectImage(UID_00, CT00_cb.SelectedItem.ToString(), "phase 00");
@@ -599,7 +598,6 @@ namespace Evaluering4D
             img70 = FindCorrectImage(UID_70, CT70_cb.SelectedItem.ToString(), "phase 70");
             img80 = FindCorrectImage(UID_80, CT80_cb.SelectedItem.ToString(), "phase 80");
             img90 = FindCorrectImage(UID_90, CT90_cb.SelectedItem.ToString(), "phase 90");
-
 
             //The plan comboboxes are cleared and ready to be filled after
             CT00_plan_cb.Items.Clear();
@@ -616,7 +614,7 @@ namespace Evaluering4D
             // It is possible to select a plan on the image if there is one.
             // Only plans in the same course as the selected plans are checked.
             // We used the series UID as this is unique.
-            if (SelectedPlanSum == null)
+            if (SelectedPlanSum == null) //Single plans
             {
                 foreach (var plan in SelectedPlan.Course.PlanSetups)
                 {
@@ -642,7 +640,7 @@ namespace Evaluering4D
 
                 }
             }
-            else // The plan must be a plansum!
+            else // Plan sums
             {
                 foreach (var plan in SelectedPlanSum.Course.PlanSums)
                 {
@@ -789,7 +787,6 @@ namespace Evaluering4D
 
             AdjustPhaseImages adjustPhaseImages = new AdjustPhaseImages(imageList, ScriptInfo, MainStructureSet);
        
-
             if (body_chb.IsChecked == true)
             {
                 progress_lb.Content = "... creating structure sets and BODY ...";
@@ -833,37 +830,30 @@ namespace Evaluering4D
 
             Errors_txt.Text = errormessages;
 
-            if (SelectedPlan != null && SelectedPlan.PlanType.ToString().Contains("Proton")) //proton
+            if (SelectedPlan != null && SelectedPlan.PlanType.ToString().Contains("Proton")) //single plan and proton plan
             {
-                MessageBox.Show("Single, proton");
                 progress_lb.Content = "... Copying proton plans ...";
                 AllowUIToUpdate();
                 CopyProtons();
             }
-            else if (SelectedPlan != null) // foton
+            else if (SelectedPlan != null) // single plan and photon plan
             {
-                MessageBox.Show("Single, foton");
                 progress_lb.Content = "... Copying photon plans ...";
                 AllowUIToUpdate();
                 CopyPhotons();
             }
-            if (SelectedPlanSum != null && SelectedPlanSum.PlanSetups.First().PlanType.ToString().Contains("Proton")) //proton
+            if (SelectedPlanSum != null && SelectedPlanSum.PlanSetups.First().PlanType.ToString().Contains("Proton")) //Sum plan and proton plan
             {
-                MessageBox.Show("Sum, proton");
-
                 progress_lb.Content = "... Copying proton sum plans ...";
                 AllowUIToUpdate();
                 CopyProtonsSum();
             }
-            else if (SelectedPlanSum != null) // foton
+            else if (SelectedPlanSum != null) //Sum plan and photon plan
             {
-                MessageBox.Show("Sum, foton");
-
                 progress_lb.Content = "... Copying photon sum plans ...";
                 AllowUIToUpdate();
                 CopyPhotonsSum();
             }
-
 
             // The evaluation button is pressed automatically in this case.
             EvalDoseE_btn.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
@@ -871,6 +861,9 @@ namespace Evaluering4D
             Errors_txt.Text = errormessages;
         }
 
+        /// <summary>
+        /// The photon sumplan is copied to the phases
+        /// </summary>
         private void CopyPhotonsSum()
         {
             //Name of the photonplan. TODO: this is a bit stupid, as if the name already exists the script will crash...
@@ -880,7 +873,7 @@ namespace Evaluering4D
                 return;
             }
 
-            //The photon plans are copied and calculated
+            //The photon sum plans are copied and calculated
             //The plans are added to the comboboxes.
             //The plans are saved in the public variables.
             //The UI is updated
@@ -1025,6 +1018,11 @@ namespace Evaluering4D
             }
         }
 
+        /// <summary>
+        /// Sumplans on the phase images are added to the plan comboboxes
+        /// </summary>
+        /// <param name="plan_cb">The plan combobox in the UI</param>
+        /// <param name="plan">The plan sum</param>
         private void AddPhasePlanSum(ComboBox plan_cb, PlanSum plan)
         {
             if (plan_cb.SelectedItem == null && plan != null)
@@ -1035,6 +1033,9 @@ namespace Evaluering4D
             }
         }
 
+        /// <summary>
+        /// The proton sumplan is copied to the phases
+        /// </summary>
         private void CopyProtonsSum()
         {
             string pro_prefix = FindPrefixForPlans();
@@ -1364,6 +1365,10 @@ namespace Evaluering4D
             AllowUIToUpdate();
         }
 
+        /// <summary>
+        /// A free prefix is found for all the new 4D plans
+        /// </summary>
+        /// <returns></returns>
         private string FindPrefixForPlans()
         {
             string planID = "";
@@ -1405,7 +1410,12 @@ namespace Evaluering4D
             return null;
         }
 
-        private bool NameIsNotUnique(string pro_prefix)
+        /// <summary>
+        /// Determining if a selected prefix is unique in the course
+        /// </summary>
+        /// <param name="prefix">The plan prefix</param>
+        /// <returns></returns>
+        private bool NameIsNotUnique(string prefix)
         {
 
             Course courseID = null;
@@ -1419,11 +1429,9 @@ namespace Evaluering4D
                 courseID = SelectedPlanSum.Course;
             }
 
-
-
             foreach (var pla in courseID.PlanSetups)
             {
-                if (pla.Id == pro_prefix)
+                if (pla.Id == prefix)
                 {
                     return false;
                 }
@@ -1434,6 +1442,8 @@ namespace Evaluering4D
         /// <summary>
         /// The plans are added to the combobox and selected.
         /// </summary>
+        /// <param name="plan_cb">Combobox in the UI</param>
+        /// <param name="plan">The plan to add to the combobox</param>
         private void AddPhasePlan(ComboBox plan_cb, PlanSetup plan)
         {
             if (plan_cb.SelectedItem == null && plan != null)
@@ -1444,14 +1454,18 @@ namespace Evaluering4D
             }
         }
 
-
         /// <summary>
         /// Copying a selected photon plan to a single phase and calculating the dose.
+        /// The method is different for VMAT and IMRT/static.
         /// A rectangle is colored green if the calculation is a sucess.
         /// </summary>
+        /// <param name="img">The source phase image</param>
+        /// <param name="rec">The box on the UI that shows if the calculations went correct</param>
+        /// <param name="name">The new ID for the 4D plan</param>
+        /// <param name="copyFrom">The original plan that will be copied</param>
+        /// <returns></returns>
         private ExternalPlanSetup CalcPhoton(VMS.TPS.Common.Model.API.Image img, Rectangle rec, string name,PlanSetup copyFrom)
         {
-
             StringBuilder outputDia = new StringBuilder("");
             ExternalPlanSetup plan = null;
 
@@ -1515,7 +1529,7 @@ namespace Evaluering4D
                 //The dose is calculated
                 var res = plan.CalculateDoseWithPresetValues(calculateIMRT);
 
-                //The normalization is set. Sometimes it differs!
+                //The normalization is set.
                 if (plan.PlanNormalizationValue != copyFrom.PlanNormalizationValue)
                 {
                     plan.PlanNormalizationValue = copyFrom.PlanNormalizationValue;
@@ -1536,7 +1550,6 @@ namespace Evaluering4D
             }
             else //VMAT plans are handeled differently as there is no need for preset MU
             {
-                //MessageBox.Show("VMAT plan");
                 errormessages += plan.Id + ": VMAT plan" + "\n";
 
                 var res = plan.CalculateDose();
@@ -1556,9 +1569,14 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// Copying a selected proton plan to a single phase and calculating the dose.
-        /// A rectangle is colored green if the calculation is a success.
+        /// Copying a selected proton plan to a single phase and calculating the dose
+        /// A rectangle is colored green if the calculation is a sucess.
         /// </summary>
+        /// <param name="img">The source phase image</param>
+        /// <param name="rec">The box on the UI that shows if the calculations went correct</param>
+        /// <param name="name">The new ID for the 4D plan</param>
+        /// <param name="copyFrom">The original plan that will be copied</param>
+        /// <returns></returns>
         private IonPlanSetup CalcProton(VMS.TPS.Common.Model.API.Image img, Rectangle rec, string name, PlanSetup copyFrom)
         {
 
@@ -1611,7 +1629,7 @@ namespace Evaluering4D
             //The structures are imported
             string[] structurenames = new string[5] { CTV1_cb.SelectedItem.ToString(), CTV2_cb.SelectedItem.ToString(), Spinal_cb.SelectedItem.ToString(), Spinal2_cb.SelectedItem.ToString(), Spinal3_cb.SelectedItem.ToString() };
 
-            if (SelectedPlan != null)
+            if (SelectedPlan != null) //single plans
             {
                 //The plans are found.
                 PlanSetup CT00plan = FindPlan(0, CT00_plan_cb);
@@ -1626,7 +1644,7 @@ namespace Evaluering4D
                 PlanSetup CT90plan = FindPlan(90, CT90_plan_cb);
 
                 //If the plans were not added to the public variables (as in the case of evaluation only) they will be added.
-                if (newPlan00 == null)
+                if (newPlan00 == null) 
                 {
                     newPlan00 = CT00plan;
                     newPlan10 = CT10plan;
@@ -1699,12 +1717,13 @@ namespace Evaluering4D
                 D5 = 50.0;
             }
             //The final doses are written as a message
-            //errormessages += "CTV1 prescribed dose: " + D1.ToString("0.00") + "\n";
-            //errormessages += "CTV2 prescribed dose: " + D2.ToString("0.00") + "\n";
-            //errormessages += "OAR dose for evaluation: " + D3.ToString("0.00") + "\n";
-            //errormessages += "OAR dose for evaluation: " + D4.ToString("0.00") + "\n";
+            errormessages += "TAR1 prescribed dose: " + D1.ToString("0.00") + "\n";
+            errormessages += "TAR2 prescribed dose: " + D2.ToString("0.00") + "\n";
+            errormessages += "OAR1 dose for evaluation: " + D3.ToString("0.00") + "\n";
+            errormessages += "OAR2 dose for evaluation: " + D4.ToString("0.00") + "\n";
+            errormessages += "OAR3 dose for evaluation: " + D5.ToString("0.00") + "\n";
 
-            if (SelectedPlan != null)
+            if (SelectedPlan != null) //Single plans
             {
                 // DVH results are read and saved in a variable if MU is approved. We allow a difference of less than 0.2 MU??.
                 // If the MU difference is too big, the rectangle will be set to red.
@@ -1831,17 +1850,22 @@ namespace Evaluering4D
                     DVHresult CT90 = new DVHresult(newPlanSum90, structurenames, D1, D2, D3, D4, D5);
                     SetValues(CT90, CT90_CTV1_lb, CT90_CTV2_lb, CT90_SC_lb, CT90_SC2_lb, CT90_SC3_lb);
                 }
-
             }
 
-            //Nu kan der eksporteres DVH'er
+            //The DVH collection can now be exported
             ExportDVH_btn.IsEnabled = true;
             Errors_txt.Text = errormessages;
 
             progress_lb.Content = "... Done! ...";
-            //progress_lb.Background = Brushes.Transparent;
         }
 
+        /// <summary>
+        /// Checking if the MU in the sum plans are correct
+        /// The calibration curve is checked
+        /// </summary>
+        /// <param name="plan">The plan sum</param>
+        /// <param name="rec">the rectangle that is colord green or red depending on the result</param>
+        /// <returns></returns>
         private bool CorrectMUSum(PlanSum plan, Rectangle rec)
         {
             bool MUisOK = true;
@@ -1858,7 +1882,7 @@ namespace Evaluering4D
                     MUisOK = false;
                 }
 
-                for(int j=0; j< plan.PlanSetups.Count(); j++)
+                for(int j = 0; j < plan.PlanSetups.Count(); j++)
                 {
                     PlanSetup ps = plan.PlanSetups.ElementAt(j); 
                     
@@ -1895,9 +1919,12 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// The MU of the plan is compared to the original plan, and the rectangle is colored red if the difference is larger than 1 promil.
-        /// The calibration curve is checked.
+        /// Checking if the MU in the single plans are correct
+        /// The calibration curve is checked
         /// </summary>
+        /// <param name="plan">The plan sum</param>
+        /// <param name="rec">the rectangle that is colord green or red depending on the result</param>
+        /// <returns></returns>
         private bool CorrectMU(PlanSetup plan, Rectangle rec)
         {
             bool MUisOK = true;
@@ -1946,6 +1973,13 @@ namespace Evaluering4D
             return MUisOK;
         }
 
+        /// <summary>
+        /// An int indicating the phase and the corresponding combobox is used to fetch the treatment plan selected in the box
+        /// It will either catch a plan selected by the user or use the public variables with the newly calculated plans.
+        /// </summary>
+        /// <param name="v">The phase identification integer</param>
+        /// <param name="CT_cb">The plan combobox where the planID can be extracted from</param>
+        /// <returns></returns>
         private PlanSum FindPlanSum(int v, ComboBox CT_cb)
         {
             PlanSum CTplan = null;
@@ -2002,9 +2036,12 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// An int indicating the phase and the corresponding combobox is used to fetch the treatment plan selected in the box.
+        /// An int indicating the phase and the corresponding combobox is used to fetch the treatment plan selected in the box
         /// It will either catch a plan selected by the user or use the public variables with the newly calculated plans.
         /// </summary>
+        /// <param name="v">The phase identification integer</param>
+        /// <param name="CT_cb">The plan combobox where the planID can be extracted from</param>
+        /// <returns></returns>
         private PlanSetup FindPlan(int v, ComboBox CT_cb)
         {
 
@@ -2064,6 +2101,12 @@ namespace Evaluering4D
         /// <summary>
         /// Given the DVH results for a phase plan, the results are set in the UI.
         /// </summary>
+        /// <param name="res">The DVH results class object</param>
+        /// <param name="CTV1_lb">UI label to hold the Tar1 result</param>
+        /// <param name="CTV2_lb">UI label to hold the Tar2 result</param>
+        /// <param name="SC_lb">UI label to hold the OAR1 result</param>
+        /// <param name="SC2_lb">UI label to hold the OAR2 result</param>
+        /// <param name="SC3_lb">UI label to hold the OAR3 result</param>
         private void SetValues(DVHresult res, Label CTV1_lb, Label CTV2_lb, Label SC_lb, Label SC2_lb, Label SC3_lb)
         {
 
@@ -2111,7 +2154,6 @@ namespace Evaluering4D
             {
                 SC3_lb.Content = res.V50_SC3.ToString("0.00");
             }
-
         }
 
         /// <summary>
@@ -2134,12 +2176,9 @@ namespace Evaluering4D
                 return;
             }
 
-            if (SelectedPlan != null)
+            if (SelectedPlan != null) //single plan
             {
-
-
-
-                PlanSetup[] allPlans = new PlanSetup[11] { SelectedPlan, newPlan00, newPlan10, newPlan20, newPlan30, newPlan40, newPlan50, newPlan60, newPlan70, newPlan80, newPlan90 };
+                PlanSetup[] allPlans = CreateList(SelectedPlan, newPlan00, newPlan10, newPlan20, newPlan30, newPlan40, newPlan50, newPlan60, newPlan70, newPlan80, newPlan90);
                 Errors_txt.Text = errormessages;
 
                 //Select a folder
@@ -2159,30 +2198,96 @@ namespace Evaluering4D
                 dvhs.SaveAll();
 
             }
-            else
+            else //If the plan is a plan sum. Each element is exported separatly = MANY FILES!
             {
-                PlanSum[] allPlans = new PlanSum[11] { SelectedPlanSum, newPlanSum00, newPlanSum10, newPlanSum20, newPlanSum30, newPlanSum40, newPlanSum50, newPlanSum60, newPlanSum70, newPlanSum80, newPlanSum90 };
-                Errors_txt.Text = errormessages;
-
-                //Select a folder
-                string folderToSave = null;
-                string dummyFileName = "Save Here";
-                SaveFileDialog sf = new SaveFileDialog()
+                for (int i = 0; i < SelectedPlanSum.PlanSetups.Count(); i++)
                 {
-                    Title = "Select the folder to save the files in",
-                    FileName = dummyFileName
-                };
-                sf.ShowDialog();
+                    PlanSetup[] allPlans = CreateList(i, SelectedPlanSum, newPlanSum00, newPlanSum10, newPlanSum20, newPlanSum30, newPlanSum40, newPlanSum50, newPlanSum60, newPlanSum70, newPlanSum80, newPlanSum90);
+                    Errors_txt.Text = errormessages;
 
-                folderToSave = System.IO.Path.GetDirectoryName(sf.FileName);
+                    //Select a folder
+                    string folderToSave = null;
+                    string dummyFileName = "Save Here";
+                    SaveFileDialog sf = new SaveFileDialog()
+                    {
+                        Title = "Select the folder to save the files in",
+                        FileName = dummyFileName
+                    };
+                    sf.ShowDialog();
 
-                Directory.CreateDirectory(folderToSave + "\\" + "dvh_exports");
-                ExportableDVHs dvhs = new ExportableDVHs(allPlans, folderToSave + "\\" + "dvh_exports", dvhresolution);
-                dvhs.SaveAll();
+                    folderToSave = System.IO.Path.GetDirectoryName(sf.FileName);
 
+                    Directory.CreateDirectory(folderToSave + "\\" + "dvh_exports");
+                    ExportableDVHs dvhs = new ExportableDVHs(allPlans, folderToSave + "\\" + "dvh_exports", dvhresolution);
+                    dvhs.SaveAll();
+                }
             }
-
-
         }
+
+        /// <summary>
+        /// Creates a list of the plans to export DVHs for
+        /// </summary>
+        /// <param name="selected">Nominel plan</param>
+        /// <param name="new00">Phase 0</param>
+        /// <param name="new10">Phase 1</param>
+        /// <param name="new20">Phase 2</param>
+        /// <param name="new30">Phase 3</param>
+        /// <param name="new40">Phase 4</param>
+        /// <param name="new50">Phase 5</param>
+        /// <param name="new60">Phase 6</param>
+        /// <param name="new70">Phase 7</param>
+        /// <param name="new80">Phase 8</param>
+        /// <param name="new90">Phase 9</param>
+        /// <returns></returns>
+        private PlanSetup[] CreateList(PlanSetup selected, PlanSetup new00, PlanSetup new10, PlanSetup new20, PlanSetup new30, PlanSetup new40, PlanSetup new50, PlanSetup new60, PlanSetup new70, PlanSetup new80, PlanSetup new90)
+        {
+            PlanSetup[] allPlans = new PlanSetup[11];
+
+            if (selected != null) allPlans[0] = selected;
+            if (new00 != null) allPlans[1] = new00;
+            if (new10 != null) allPlans[2] = new10;
+            if (new20 != null) allPlans[3] = new20;
+            if (new30 != null) allPlans[4] = new30;
+            if (new40 != null) allPlans[5] = new40;
+            if (new50 != null) allPlans[6] = new50;
+            if (new60 != null) allPlans[7] = new60;
+            if (new70 != null) allPlans[8] = new70;
+            if (new80 != null) allPlans[9] = new80;
+            if (new90 != null) allPlans[10] = new90;
+            return allPlans;
         }
+
+        /// <summary>
+        /// Creates a list of the single plans to export DVHs for within the sumplans
+        /// </summary>
+        /// <param name="selected">Nominel plan</param>
+        /// <param name="new00">Phase 0</param>
+        /// <param name="new10">Phase 1</param>
+        /// <param name="new20">Phase 2</param>
+        /// <param name="new30">Phase 3</param>
+        /// <param name="new40">Phase 4</param>
+        /// <param name="new50">Phase 5</param>
+        /// <param name="new60">Phase 6</param>
+        /// <param name="new70">Phase 7</param>
+        /// <param name="new80">Phase 8</param>
+        /// <param name="new90">Phase 9</param>
+        /// <returns></returns>
+        private PlanSetup[] CreateList(int i, PlanSum selected, PlanSum new00, PlanSum new10, PlanSum new20, PlanSum new30, PlanSum new40, PlanSum new50, PlanSum new60, PlanSum new70, PlanSum new80, PlanSum new90)
+        {
+            PlanSetup[] allPlans = new PlanSetup[11];
+
+            if (selected != null) allPlans[0] = selected.PlanSetups.ElementAt(i);
+            if (new00 != null) allPlans[1] = new00.PlanSetups.ElementAt(i);
+            if (new10 != null) allPlans[2] = new10.PlanSetups.ElementAt(i);
+            if (new20 != null) allPlans[3] = new20.PlanSetups.ElementAt(i);
+            if (new30 != null) allPlans[4] = new30.PlanSetups.ElementAt(i);
+            if (new40 != null) allPlans[5] = new40.PlanSetups.ElementAt(i);
+            if (new50 != null) allPlans[6] = new50.PlanSetups.ElementAt(i);
+            if (new60 != null) allPlans[7] = new60.PlanSetups.ElementAt(i);
+            if (new70 != null) allPlans[8] = new70.PlanSetups.ElementAt(i);
+            if (new80 != null) allPlans[9] = new80.PlanSetups.ElementAt(i);
+            if (new90 != null) allPlans[10] = new90.PlanSetups.ElementAt(i);
+            return allPlans;
+        }
+    }
 }

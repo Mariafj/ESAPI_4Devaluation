@@ -45,7 +45,7 @@
         <Grid Background="#FFFFF8F8" Margin="0,0,0,0">
             <Grid Margin="0,0,0,0">
 
-                <Label Content="16/11/22 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
+                <Label Content="24/11/22 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
                 <Grid HorizontalAlignment="Left" Height="195" Margin="198,50,0,0" VerticalAlignment="Top" Width="334">
                     <Label Content="2. Define structures and dose levels:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="224" FontWeight="Bold"/>
 

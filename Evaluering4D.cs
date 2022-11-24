@@ -41,7 +41,7 @@ using System.Reflection;
 [assembly: ESAPIScript(IsWriteable = true)]
 
 
-[assembly: AssemblyVersion("3.0.0.9")] //Skal ændres løbende
+[assembly: AssemblyVersion("3.0.0.10")] //Skal ændres løbende
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: AssemblyInformationalVersion("1.0")]
 
@@ -55,7 +55,6 @@ namespace VMS.TPS
 
         public void Execute(ScriptContext context, System.Windows.Window window)
         {
-
             // Script window generation
             var mainControl = new Evaluering4D.UserControl1();
             window.Content = mainControl;
@@ -65,6 +64,7 @@ namespace VMS.TPS
             window.Height = 780;
             window.MaxHeight = 780;
             window.MinHeight = 400;
+
             //Patient information is saved here
             mainControl.ScriptInfo = context;
 
@@ -75,11 +75,11 @@ namespace VMS.TPS
                 mainControl.SelectPlan_cb.Items.Add(plan.Course.Id  + "/" + plan.Id);
             }
 
+            //New in version3. Add sumplans to the combobox
             foreach (var sumplan in context.PlanSumsInScope)
             {
                 //Sumplans can also be evaluated
                 mainControl.SelectPlan_cb.Items.Add(sumplan.Course.Id + "/" + sumplan.Id);
-
             }
         }
     }
