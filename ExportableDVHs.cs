@@ -62,6 +62,8 @@ namespace Evaluering4D
             //Loopeing over planer
             for (int i = 0; i < AllPlanIds.Count(); i++)
             {
+                if (!AllPlans[i].IsDoseValid) continue; //If the plans for some reason are not calculated. This can happen if a materials tabel is missing.
+               
                 string filename = AllPlanIds[i];
                 string firstLine = "Nominal dose. Plan id: " + AllPlanIds[i];
 
@@ -94,7 +96,7 @@ namespace Evaluering4D
                 {
                     if (uncert.Dose == null) continue;
 
-                    string filename = AllPlans[0].Id.Substring(0, 4) + "_" + uncert.Id;
+                    string filename = AllPlans[0].Id.Substring(0, 2) + "_" + uncert.Id;
                     string firstLine = "Uncertainty scenario: " + uncert.DisplayName + " to nominal plan: " + AllPlans[0].Id;
 
                     //Data is collected in a large matrix and we need to determine the size first.

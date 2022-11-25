@@ -2181,6 +2181,7 @@ namespace Evaluering4D
                 PlanSetup[] allPlans = CreateList(SelectedPlan, newPlan00, newPlan10, newPlan20, newPlan30, newPlan40, newPlan50, newPlan60, newPlan70, newPlan80, newPlan90);
                 Errors_txt.Text = errormessages;
 
+
                 //Select a folder
                 string folderToSave = null;
                 string dummyFileName = "Save Here";
