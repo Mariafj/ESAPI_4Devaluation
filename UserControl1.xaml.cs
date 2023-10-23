@@ -22,7 +22,6 @@
 // ABOUT
 // ESAPI 4D evaluation script
 // Developed at the Danish Centre for Particle Therapy by medical physicist Maria Fuglsang Jensen
-// February 2022
 // The script can be used to:
 // Automatical recalculation of a proton, IMRT or VMAT plan on all phases of a 4D
 // Perform a simple evaluation on plans calculated on all phases of a 4D
@@ -211,6 +210,9 @@ namespace Evaluering4D
             CT90_plan_cb.Items.Clear();
         }
 
+        /// <summary>
+        /// This method forces the UI to update when ever it is called.
+        /// </summary>
         void AllowUIToUpdate()
         {
             DispatcherFrame frame = new DispatcherFrame();
@@ -227,7 +229,7 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// Based in a string course id and a string plan id, we determine if the plan is a sumplan or not.
+        /// Based on a string course id and a string plan id, we determine if the plan is a sumplan or not.
         /// </summary>
         /// <param name="courseid">The course id</param>
         /// <param name="planid">The plan  id</param>
@@ -317,12 +319,11 @@ namespace Evaluering4D
             CT90_cb.Items.Add("skip");
 
             //All 3D images in the study belonging to the primary planning image are now looped through.
-            //This is a 16.1 specific method...
             //When the images are a potential match, their series UID is saved for later use, as this is a unique number.
             foreach (var img in MainStructureSet.Image.Series.Study.Images3D)
             {
                 //We do not want to calculate on a MIP
-                if (img.Series.Comment.ToString().Contains("MIP"))
+                if (img.Series.Comment.ToString().ToUpper().Contains("MIP"))
                 {
                     continue;
                 }
@@ -571,7 +572,7 @@ namespace Evaluering4D
         /// <summary>
         /// The images are selected and saved to the public variables
         /// If there are plans calculated on the images, they will be added to the plan-comboboxes.
-        /// The function destinquished between the writable version and the non-writable by using the bookean writeYN
+        /// The function destinquish between the writable version and the non-writable by using the boolean writeYN
         /// </summary>
         /// <param name="writeYN">Boolean determining if the script will evaluate or create 4D plans</param>
         private void SelectImages(bool writeYN)
@@ -1986,7 +1987,7 @@ namespace Evaluering4D
 
             try
             {
-                CTplan = ScriptInfo.Course.PlanSums.First(p => p.Id == CT_cb.SelectedItem.ToString());
+                CTplan = SelectedPlanSum.Course.PlanSums.First(p => p.Id == CT_cb.SelectedItem.ToString());
             }
             catch (Exception)
             {
@@ -2049,7 +2050,7 @@ namespace Evaluering4D
 
             try
             {
-                CTplan = ScriptInfo.Course.PlanSetups.First(p => p.Id == CT_cb.SelectedItem.ToString());
+                CTplan = SelectedPlan.Course.PlanSetups.First(p => p.Id == CT_cb.SelectedItem.ToString());
             }
             catch (Exception)
             {
@@ -2112,20 +2113,20 @@ namespace Evaluering4D
 
             if (res.V95CTV1 == -1000)
             {
-                CTV1_lb.Content = res.V95CTV1.ToString("N/A");
+                CTV1_lb.Content = "N/A";
             }
             else
             {
-                CTV1_lb.Content = res.V95CTV1.ToString("0.00");
+                CTV1_lb.Content = Math.Round(res.V95CTV1,2,MidpointRounding.AwayFromZero).ToString("0.00");
             }
 
             if (res.V95CTV2 == -1000)
             {
-                CTV2_lb.Content = res.V95CTV2.ToString("N/A");
+                CTV2_lb.Content = "N/A";
             }
             else
             {
-                CTV2_lb.Content = res.V95CTV2.ToString("0.00");
+                CTV2_lb.Content = Math.Round(res.V95CTV2, 2, MidpointRounding.AwayFromZero).ToString("0.00");
             }
 
             if (res.V50_SC == -1000)
@@ -2134,7 +2135,7 @@ namespace Evaluering4D
             }
             else
             {
-                SC_lb.Content = res.V50_SC.ToString("0.00");
+                SC_lb.Content = Math.Round(res.V50_SC, 2, MidpointRounding.AwayFromZero).ToString("0.00");
             }
 
             if (res.V50_SC2 == -1000)
@@ -2143,7 +2144,7 @@ namespace Evaluering4D
             }
             else
             {
-                SC2_lb.Content = res.V50_SC2.ToString("0.00");
+                SC2_lb.Content = Math.Round(res.V50_SC2, 2, MidpointRounding.AwayFromZero).ToString("0.00");
             }
 
             if (res.V50_SC3 == -1000)
@@ -2152,22 +2153,22 @@ namespace Evaluering4D
             }
             else
             {
-                SC3_lb.Content = res.V50_SC3.ToString("0.00");
+                SC3_lb.Content = Math.Round(res.V50_SC3,2,MidpointRounding.AwayFromZero).ToString("0.00");
             }
         }
 
         /// <summary>
         /// All DVHes are exported for the main plan and the new phases.
         /// If uncertainty doses exist for the main plan, they will be exported as well.
-        /// The user defines the resolution. Default is 0.1.
+        /// The user defines the resolution. Default is 0.05.
         /// </summary>
         private void ExportDVH_btn_Click(object sender, RoutedEventArgs e)
         {
 
-            double dvhresolution = 0.1;
+            double dvhresolution = 0.05;
             if (!Double.TryParse(dvhresolution_tb.Text, out dvhresolution))
             {
-                dvhresolution = 0.1;
+                dvhresolution = 0.05;
             }
 
             if (dvhresolution < 0.001)

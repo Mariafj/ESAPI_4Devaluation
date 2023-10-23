@@ -22,7 +22,6 @@
 // ABOUT
 // ESAPI 4D evaluation script
 // Developed at the Danish Centre for Particle Therapy by medical physicist Maria Fuglsang Jensen
-// February 2022
 // The script can be used to:
 // Automatical recalculation of a proton, IMRT or VMAT plan on all phases of a 4D
 // Perform a simple evaluation on plans calculated on all phases of a 4D
@@ -32,8 +31,9 @@
 using System.Linq;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
+
 /// <summary>
-/// A class for the DVH calculations.
+/// A class for the DVH calculations in the UI.
 /// </summary>
 public class DVHresult
 {

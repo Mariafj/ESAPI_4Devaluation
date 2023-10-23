@@ -22,7 +22,6 @@
 // ABOUT
 // ESAPI 4D evaluation script
 // Developed at the Danish Centre for Particle Therapy by medical physicist Maria Fuglsang Jensen
-// February 2022
 // The script can be used to:
 // Automatical recalculation of a proton, IMRT or VMAT plan on all phases of a 4D
 // Perform a simple evaluation on plans calculated on all phases of a 4D
@@ -41,7 +40,7 @@ using System.Reflection;
 [assembly: ESAPIScript(IsWriteable = true)]
 
 
-[assembly: AssemblyVersion("3.0.0.10")] //Skal ændres løbende
+[assembly: AssemblyVersion("3.0.0.10")] //This parameter must be changed when the script is changed. Hereafter the script must be approved in Eclipse.
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: AssemblyInformationalVersion("1.0")]
 
@@ -65,7 +64,7 @@ namespace VMS.TPS
             window.MaxHeight = 780;
             window.MinHeight = 400;
 
-            //Patient information is saved here
+            //Patient information is transfered to the window controller
             mainControl.ScriptInfo = context;
 
             //All open plans are selectable in the first combobox
@@ -81,6 +80,23 @@ namespace VMS.TPS
                 //Sumplans can also be evaluated
                 mainControl.SelectPlan_cb.Items.Add(sumplan.Course.Id + "/" + sumplan.Id);
             }
+
+            //This is specific for Esophagus evaluation where we are looking for 50 Gy to the spinal cord, 107% and 110% to the body.
+            try
+            {
+                double totalDose = context.PlanSetup.TotalDose.Dose;
+                mainControl.CTV1_tb.Text = totalDose.ToString("0.00");
+                mainControl.CTV2_tb.Text = totalDose.ToString("0.00");
+
+                mainControl.OAR_tb.Text = "50.0";
+                mainControl.OAR2_tb.Text = (totalDose * 1.07).ToString("0.00");
+                mainControl.OAR3_tb.Text = (totalDose * 1.10).ToString("0.00");
+            }
+            catch (Exception)
+            {
+            }
+
+
         }
     }
 }

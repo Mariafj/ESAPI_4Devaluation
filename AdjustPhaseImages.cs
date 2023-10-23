@@ -115,7 +115,7 @@ namespace Evaluering4D
                             }
                         }
 
-                        //If the stucture alread exist, it will be HU-overwritten.
+                        //If the stucture already exist, it will be HU-overwritten.
                         if (structureExist)
                         {
                             var str = struSet.Structures.Where(s => s.Id == strSelected.Id).First();
@@ -142,7 +142,7 @@ namespace Evaluering4D
                                 }
                             }
                         }
-                        // The structure does not exist and we must create it. Due to an issue with ESAPI this is done by two try/catch methods.
+                        // The structure does not exist and we must create it. Due to an issue with ESAPI and dicom types this is done by two try/catch methods.
                         else
                         {
                             double HU;
@@ -157,7 +157,7 @@ namespace Evaluering4D
                             }
                             catch (Exception)
                             {
-                                // There is an issue in ESAPI that transfered structures can loose there Dicom Type and for some reason not be transfered here.
+                                // There is an issue in ESAPI that transfered structures can loose there Dicom Type and for some reason not be transfered copied.
                                 // This is handled by creating a new structure for the couch and setting a dicom type.
                                 // This can however cause problems if overwritten structures are overlapping. As the priority is then changed.
                                 try
@@ -251,7 +251,8 @@ namespace Evaluering4D
 
         /// <summary>
         /// For each phase in the 4D we search for a structure set. 
-        /// If the set does not exist it is created. 
+        /// If the set does not exist it is created.
+        /// We will also create the body structure.
         /// </summary>
         public string[] CreateBody()
         {
@@ -261,7 +262,6 @@ namespace Evaluering4D
 
             int[] checklist = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-            //MAY 2022
             //Are we missing structuresets on the images?
             for (int i = 0; i < ImageList.Length; i++)
             {
@@ -278,7 +278,7 @@ namespace Evaluering4D
                 }
             }
 
-            // Missing structure sets will be created and a body is copied from the original scan.
+            // Missing structure sets will be created and a default body is created.
             Structure bodystructure = SelectedStructureSet.Structures.First(s => s.DicomType.ToUpper() == "EXTERNAL");
             for (int i = 0; i < checklist.Count(); i++)
             {
@@ -332,6 +332,10 @@ namespace Evaluering4D
             return report_string;
         }
 
+        /// <summary>
+        /// For some centres the total body from the nominal plan is needed on all the phases. This function copies the body, if the user has selected this option.
+        /// </summary>
+        /// <returns></returns>
         public string[] CopyBody()
         {
             string[] report_string = new string[10];

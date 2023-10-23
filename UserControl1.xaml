@@ -42,10 +42,10 @@
              >
     <ScrollViewer HorizontalScrollBarVisibility="auto" VerticalScrollBarVisibility="auto" Height="auto" Width="auto">
 
-        <Grid Background="#FFFFF8F8" Margin="0,0,0,0">
+        <Grid Background="HoneyDew" Margin="0,0,0,0">
             <Grid Margin="0,0,0,0">
 
-                <Label Content="24/11/22 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
+                <Label Content="17/10/23 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
                 <Grid HorizontalAlignment="Left" Height="195" Margin="198,50,0,0" VerticalAlignment="Top" Width="334">
                     <Label Content="2. Define structures and dose levels:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="224" FontWeight="Bold"/>
 
@@ -219,11 +219,11 @@
                 <Grid HorizontalAlignment="Left" Height="84" Margin="798,644,0,0" VerticalAlignment="Top" Width="183">
                     <Button x:Name="ExportDVH_btn" Content="Export" HorizontalAlignment="Left" Height="47" Margin="97,27,0,0" VerticalAlignment="Top" Width="58" IsEnabled="False" Click="ExportDVH_btn_Click"/>
                     <Label Content="Export DVHs:" HorizontalAlignment="Left" Height="29" VerticalAlignment="Top" Width="120" FontWeight="Bold"/>
-                    <TextBox x:Name="dvhresolution_tb" HorizontalAlignment="Left" Height="20" Margin="10,54,0,0" TextWrapping="Wrap" Text="0.1" VerticalAlignment="Top" Width="34"/>
+                    <TextBox x:Name="dvhresolution_tb" HorizontalAlignment="Left" Height="20" Margin="10,54,0,0" TextWrapping="Wrap" Text="0.05" VerticalAlignment="Top" Width="34"/>
                     <Label Content="Gy" HorizontalAlignment="Left" Height="28" Margin="49,46,0,0" VerticalAlignment="Top" Width="28"/>
                     <Label Content="DVH resolution:" HorizontalAlignment="Left" Height="28" Margin="0,26,0,0" VerticalAlignment="Top" Width="92"/>
                 </Grid>
-                <Label Content="4D evaluation script" HorizontalAlignment="Left" Height="47" Margin="9,10,0,0" VerticalAlignment="Top" Width="523" FontWeight="Bold" FontSize="24" Grid.ColumnSpan="2"/>
+                <Label Content="4D evaluation script - Read or Write" HorizontalAlignment="Left" Height="47" Margin="9,10,0,0" VerticalAlignment="Top" Width="523" FontWeight="Bold" FontSize="24" Grid.ColumnSpan="2"/>
             </Grid>
             <Label x:Name="progress_lb" Content="" HorizontalAlignment="Center" Height="34" Margin="0,255,0,0" VerticalAlignment="Top" Width="999" FontSize="16"/>
         </Grid>
