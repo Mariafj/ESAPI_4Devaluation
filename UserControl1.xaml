@@ -223,7 +223,7 @@
                     <Label Content="Gy" HorizontalAlignment="Left" Height="28" Margin="49,46,0,0" VerticalAlignment="Top" Width="28"/>
                     <Label Content="DVH resolution:" HorizontalAlignment="Left" Height="28" Margin="0,26,0,0" VerticalAlignment="Top" Width="92"/>
                 </Grid>
-                <Label Content="4D evaluation script - Read or Write" HorizontalAlignment="Left" Height="47" Margin="9,10,0,0" VerticalAlignment="Top" Width="523" FontWeight="Bold" FontSize="24" Grid.ColumnSpan="2"/>
+                <Label Content="4D evaluation script - Read and Write" HorizontalAlignment="Left" Height="47" Margin="9,10,0,0" VerticalAlignment="Top" Width="523" FontWeight="Bold" FontSize="24" Grid.ColumnSpan="2"/>
             </Grid>
             <Label x:Name="progress_lb" Content="" HorizontalAlignment="Center" Height="34" Margin="0,255,0,0" VerticalAlignment="Top" Width="999" FontSize="16"/>
         </Grid>

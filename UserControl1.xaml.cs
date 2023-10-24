@@ -56,6 +56,9 @@ namespace Evaluering4D
     /// </summary>
     public partial class UserControl1 : UserControl
     {
+
+        #region PublicVariables
+
         //Several public parameters are used in methods and functions.
         public ScriptContext ScriptInfo; //The database content for the selected patient.
 
@@ -117,10 +120,14 @@ namespace Evaluering4D
 
         public bool[] skip_img;
 
+        #endregion PublicVariables
+
         public UserControl1()
         {
             InitializeComponent();
         }
+
+        #region UpdateAndClearUI
 
         /// <summary>
         /// All public variables and comboboxes are cleared by this function.
@@ -227,6 +234,10 @@ namespace Evaluering4D
             System.Windows.Application.Current.Dispatcher.Invoke(DispatcherPriority.Background,
                                           new Action(delegate { }));
         }
+
+        #endregion UpdateAndClearUI
+
+        #region SelectPlans
 
         /// <summary>
         /// Based on a string course id and a string plan id, we determine if the plan is a sumplan or not.
@@ -496,6 +507,101 @@ namespace Evaluering4D
             //Errormessages are written in the UI.
             Errors_txt.Text = errormessages;
         }
+
+        /// <summary>
+        /// The plans are copied to the phases and new buttons are enabled.
+        /// The copy process depends on the plan type.
+        /// </summary>
+        private void CopyPlan_btn_Click(object sender, RoutedEventArgs e)
+        {
+            ScriptInfo.Patient.BeginModifications();
+
+            string[] body = new string[10];
+            string[] calib = new string[10];
+            string[] overwrite = new string[10];
+
+            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
+
+            AdjustPhaseImages adjustPhaseImages = new AdjustPhaseImages(imageList, ScriptInfo, MainStructureSet);
+       
+            if (body_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... creating structure sets and BODY ...";
+                AllowUIToUpdate();
+
+                body = adjustPhaseImages.CreateBody();
+            }
+
+            if (copybody_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... copying BODY ...";
+                AllowUIToUpdate();
+
+                body = adjustPhaseImages.CopyBody();
+            }
+
+            if (calib_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... Setting calibration curves ...";
+                AllowUIToUpdate();
+                calib = adjustPhaseImages.CopyCalibration();
+            }
+
+            if (overw_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... Copying and overwriting structures ...";
+                AllowUIToUpdate();
+                overwrite = adjustPhaseImages.OverwriteStructures();
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (body[i] != "" || calib[i] != "" || overwrite[i] != "")
+                {
+                    errormessages += " PHASE " + i.ToString() + " : \n";
+                    errormessages += body[i];
+                    errormessages += calib[i];
+                    errormessages += overwrite[i];
+                }
+            }
+
+            Errors_txt.Text = errormessages;
+
+            if (SelectedPlan != null && SelectedPlan.PlanType.ToString().Contains("Proton")) //single plan and proton plan
+            {
+                progress_lb.Content = "... Copying proton plans ...";
+                AllowUIToUpdate();
+                CopyProtons();
+            }
+            else if (SelectedPlan != null) // single plan and photon plan
+            {
+                progress_lb.Content = "... Copying photon plans ...";
+                AllowUIToUpdate();
+                CopyPhotons();
+            }
+            if (SelectedPlanSum != null && SelectedPlanSum.PlanSetups.First().PlanType.ToString().Contains("Proton")) //Sum plan and proton plan
+            {
+                progress_lb.Content = "... Copying proton sum plans ...";
+                AllowUIToUpdate();
+                CopyProtonsSum();
+            }
+            else if (SelectedPlanSum != null) //Sum plan and photon plan
+            {
+                progress_lb.Content = "... Copying photon sum plans ...";
+                AllowUIToUpdate();
+                CopyPhotonsSum();
+            }
+
+            // The evaluation button is pressed automatically in this case.
+            EvalDoseE_btn.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            EvalDoseE_btn.IsEnabled = true;
+            Errors_txt.Text = errormessages;
+        }
+
+        #endregion SelectPlans
+
+        #region FindAndSelectImages
+
         /// <summary>
         /// Finds the correct 3D image given a seried UID list and a string defining the selected phase
         /// </summary>
@@ -772,95 +878,9 @@ namespace Evaluering4D
             Errors_txt.Text = errormessages;
         }
 
-        /// <summary>
-        /// The plans are copied to the phases and new buttons are enabled.
-        /// The copy process depends on the plan type.
-        /// </summary>
-        private void CopyPlan_btn_Click(object sender, RoutedEventArgs e)
-        {
-            ScriptInfo.Patient.BeginModifications();
+        #endregion FindAndSelectImages
 
-            string[] body = new string[10];
-            string[] calib = new string[10];
-            string[] overwrite = new string[10];
-
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-
-            AdjustPhaseImages adjustPhaseImages = new AdjustPhaseImages(imageList, ScriptInfo, MainStructureSet);
-       
-            if (body_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... creating structure sets and BODY ...";
-                AllowUIToUpdate();
-
-                body = adjustPhaseImages.CreateBody();
-            }
-
-            if (copybody_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... copying BODY ...";
-                AllowUIToUpdate();
-
-                body = adjustPhaseImages.CopyBody();
-            }
-
-            if (calib_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... Setting calibration curves ...";
-                AllowUIToUpdate();
-                calib = adjustPhaseImages.CopyCalibration();
-            }
-
-            if (overw_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... Copying and overwriting structures ...";
-                AllowUIToUpdate();
-                overwrite = adjustPhaseImages.OverwriteStructures();
-            }
-
-            for (int i = 0; i < 10; i++)
-            {
-                if (body[i] != "" || calib[i] != "" || overwrite[i] != "")
-                {
-                    errormessages += " PHASE " + i.ToString() + " : \n";
-                    errormessages += body[i];
-                    errormessages += calib[i];
-                    errormessages += overwrite[i];
-                }
-            }
-
-            Errors_txt.Text = errormessages;
-
-            if (SelectedPlan != null && SelectedPlan.PlanType.ToString().Contains("Proton")) //single plan and proton plan
-            {
-                progress_lb.Content = "... Copying proton plans ...";
-                AllowUIToUpdate();
-                CopyProtons();
-            }
-            else if (SelectedPlan != null) // single plan and photon plan
-            {
-                progress_lb.Content = "... Copying photon plans ...";
-                AllowUIToUpdate();
-                CopyPhotons();
-            }
-            if (SelectedPlanSum != null && SelectedPlanSum.PlanSetups.First().PlanType.ToString().Contains("Proton")) //Sum plan and proton plan
-            {
-                progress_lb.Content = "... Copying proton sum plans ...";
-                AllowUIToUpdate();
-                CopyProtonsSum();
-            }
-            else if (SelectedPlanSum != null) //Sum plan and photon plan
-            {
-                progress_lb.Content = "... Copying photon sum plans ...";
-                AllowUIToUpdate();
-                CopyPhotonsSum();
-            }
-
-            // The evaluation button is pressed automatically in this case.
-            EvalDoseE_btn.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
-            EvalDoseE_btn.IsEnabled = true;
-            Errors_txt.Text = errormessages;
-        }
+        #region CopyPhotonPlans
 
         /// <summary>
         /// The photon sumplan is copied to the phases
@@ -1020,19 +1040,206 @@ namespace Evaluering4D
         }
 
         /// <summary>
-        /// Sumplans on the phase images are added to the plan comboboxes
+        /// Copying a selected photon plan to all phases and calculating the dose.
         /// </summary>
-        /// <param name="plan_cb">The plan combobox in the UI</param>
-        /// <param name="plan">The plan sum</param>
-        private void AddPhasePlanSum(ComboBox plan_cb, PlanSum plan)
+        private void CopyPhotons()
         {
-            if (plan_cb.SelectedItem == null && plan != null)
+            //Name of the photonplan. TODO: this is a bit stupid, as if the name already exists the script will crash...
+            string ph_prefix = FindPrefixForPlans();
+            if (ph_prefix == null)
             {
-                plan_cb.Items.Add(plan.Id);
-                int itemno = plan_cb.Items.Count;
-                plan_cb.SelectedItem = plan_cb.Items[itemno - 1];
+                return;
+            }
+
+            //The photon plans are copied and calculated
+            //The plans are added to the comboboxes.
+            //The plans are saved in the public variables.
+            //The UI is updated
+
+            progress_lb.Content = "... Copying to phase 00 ...";
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan00 = CalcPhoton(img00, rec_00, ph_prefix + "00", SelectedPlan);
+            AddPhasePlan(CT00_plan_cb, Plan00);
+            newPlan00 = Plan00;
+            progress_lb.Content = "... Copying to phase 10 ...";
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan10 = CalcPhoton(img10, rec_10, ph_prefix + "10", SelectedPlan);
+            AddPhasePlan(CT10_plan_cb, Plan10);
+            newPlan10 = Plan10;
+            progress_lb.Content = "... Copying to phase 20 ...";
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan20 = CalcPhoton(img20, rec_20, ph_prefix + "20", SelectedPlan);
+            AddPhasePlan(CT20_plan_cb, Plan20);
+            newPlan20 = Plan20;
+            progress_lb.Content = "... Copying to phase 30 ...";
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan30 = CalcPhoton(img30, rec_30, ph_prefix + "30", SelectedPlan);
+            AddPhasePlan(CT30_plan_cb, Plan30);
+            newPlan30 = Plan30;
+            progress_lb.Content = "... Copying to phase 40 ...";
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan40 = CalcPhoton(img40, rec_40, ph_prefix + "40", SelectedPlan);
+            AddPhasePlan(CT40_plan_cb, Plan40);
+            newPlan40 = Plan40;
+            progress_lb.Content = "... Copying to phase 50 ...";
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan50 = CalcPhoton(img50, rec_50, ph_prefix + "50", SelectedPlan);
+            AddPhasePlan(CT50_plan_cb, Plan50);
+            newPlan50 = Plan50;
+            progress_lb.Content = "... Copying to phase 60 ...";
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan60 = CalcPhoton(img60, rec_60, ph_prefix + "60", SelectedPlan);
+            AddPhasePlan(CT60_plan_cb, Plan60);
+            newPlan60 = Plan60;
+            progress_lb.Content = "... Copying to phase 70 ...";
+            AllowUIToUpdate();
+
+
+            ExternalPlanSetup Plan70 = CalcPhoton(img70, rec_70, ph_prefix + "70", SelectedPlan);
+            AddPhasePlan(CT70_plan_cb, Plan70);
+            newPlan70 = Plan70;
+            progress_lb.Content = "... Copying to phase 80 ...";
+
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan80 = CalcPhoton(img80, rec_80, ph_prefix + "80", SelectedPlan);
+            AddPhasePlan(CT80_plan_cb, Plan80);
+            newPlan80 = Plan80;
+            progress_lb.Content = "... Copying to phase 90 ...";
+
+            AllowUIToUpdate();
+
+            ExternalPlanSetup Plan90 = CalcPhoton(img90, rec_90, ph_prefix + "90", SelectedPlan);
+            AddPhasePlan(CT90_plan_cb, Plan90);
+            newPlan90 = Plan90;
+            progress_lb.Content = "...All plans are copied ...";
+            AllowUIToUpdate();
+        }
+
+        /// <summary>
+        /// Copying a selected photon plan to a single phase and calculating the dose.
+        /// The method is different for VMAT and IMRT/static.
+        /// A rectangle is colored green if the calculation is a sucess.
+        /// </summary>
+        /// <param name="img">The source phase image</param>
+        /// <param name="rec">The box on the UI that shows if the calculations went correct</param>
+        /// <param name="name">The new ID for the 4D plan</param>
+        /// <param name="copyFrom">The original plan that will be copied</param>
+        /// <returns></returns>
+        private ExternalPlanSetup CalcPhoton(VMS.TPS.Common.Model.API.Image img, Rectangle rec, string name,PlanSetup copyFrom)
+        {
+            StringBuilder outputDia = new StringBuilder("");
+            ExternalPlanSetup plan = null;
+
+            if (img == null)
+            {
+                return plan;
+            }
+
+            // If the plan is copied to the same image we do not need to calculate.
+            // If the plan is copied to a new image, we will have to calculate later.
+            // The copy-method is the same for IMRT og VMAT
+            if (copyFrom.StructureSet.Image.Id == img.Id && copyFrom.StructureSet.Image.Series.UID == img.Series.UID)
+            {
+                plan = copyFrom.Course.CopyPlanSetup(copyFrom) as ExternalPlanSetup;
+                rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                plan.Id = name;
+                return plan;
+            }
+            else
+            {
+                plan = copyFrom.Course.CopyPlanSetup(copyFrom, img, outputDia) as ExternalPlanSetup;
+            }
+
+            plan.Id = name;
+
+
+            // IMRT plans are copied now
+            if (plan.Beams.First().Technique.ToString().ToUpper() == "STATIC")
+            {
+                errormessages += plan.Id + ": IMRT or static photon plan" + "\n";
+
+                //The MU settings are copied from the original plan. This is the initialisation of the list of values for each beam in the plan.
+                List<KeyValuePair<string, MetersetValue>> calculateIMRT = new List<KeyValuePair<string, MetersetValue>>();
+
+                foreach (var item in copyFrom.Beams)
+                {
+                    KeyValuePair<string, MetersetValue> temp = new KeyValuePair<string, MetersetValue>(item.Id, item.Meterset);
+                    calculateIMRT.Add(temp);
+                }
+
+                // If the LMC can be calculated now we will do it.
+                // I dont understand why I sometimes have to do it and otherwise not. 
+                // Maybe this part can be completely skipped. However it does not hurt as the exception is caught and ignored when it is impossible...
+                try
+                {
+                    var res2 = plan.CalculateLeafMotions();
+                    errormessages += "Leafmotion calculated for: " + plan.Id + "\n";
+
+                    if (!res2.Success)
+                    {
+                        errormessages += "Leafmotion calculation error for plan: " + plan.Id + "\n";
+                        return plan;
+                    }
+                }
+                catch (Exception)
+                {
+                    errormessages += "Leafmotion not calculated for: " + plan.Id + "\n";
+
+                }
+
+                //The dose is calculated
+                var res = plan.CalculateDoseWithPresetValues(calculateIMRT);
+
+                //The normalization is set.
+                if (plan.PlanNormalizationValue != copyFrom.PlanNormalizationValue)
+                {
+                    plan.PlanNormalizationValue = copyFrom.PlanNormalizationValue;
+                }
+
+                // If the calculation fails or not...
+                if (!res.Success)
+                {
+                    errormessages += "Dose calculation error for plan: " + plan.Id + "\n";
+                    return plan;
+                }
+                else
+                {
+                    rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                    return plan;
+                }
+
+            }
+            else //VMAT plans are handeled differently as there is no need for preset MU
+            {
+                errormessages += plan.Id + ": VMAT plan" + "\n";
+
+                var res = plan.CalculateDose();
+
+                if (!res.Success)
+                {
+                    errormessages += "Dose calculation error for plan: " + plan.Id + "\n";
+                    return plan;
+                }
+                else
+                {
+                    rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                    plan.PlanNormalizationValue = copyFrom.PlanNormalizationValue;
+                    return plan;
+                }
             }
         }
+        
+        #endregion CoypPhotonPlans
+
+        #region CopyProtonPlans
 
         /// <summary>
         /// The proton sumplan is copied to the phases
@@ -1189,91 +1396,7 @@ namespace Evaluering4D
                 AddPhasePlanSum(CT90_plan_cb, newPlanSum90);
             }
         }
-
-        /// <summary>
-        /// Copying a selected photon plan to all phases and calculating the dose.
-        /// </summary>
-        private void CopyPhotons()
-        {
-            //Name of the photonplan. TODO: this is a bit stupid, as if the name already exists the script will crash...
-            string ph_prefix = FindPrefixForPlans();
-            if (ph_prefix == null)
-            {
-                return;
-            }
-
-            //The photon plans are copied and calculated
-            //The plans are added to the comboboxes.
-            //The plans are saved in the public variables.
-            //The UI is updated
-
-            progress_lb.Content = "... Copying to phase 00 ...";
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan00 = CalcPhoton(img00, rec_00, ph_prefix + "00", SelectedPlan);
-            AddPhasePlan(CT00_plan_cb, Plan00);
-            newPlan00 = Plan00;
-            progress_lb.Content = "... Copying to phase 10 ...";
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan10 = CalcPhoton(img10, rec_10, ph_prefix + "10", SelectedPlan);
-            AddPhasePlan(CT10_plan_cb, Plan10);
-            newPlan10 = Plan10;
-            progress_lb.Content = "... Copying to phase 20 ...";
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan20 = CalcPhoton(img20, rec_20, ph_prefix + "20", SelectedPlan);
-            AddPhasePlan(CT20_plan_cb, Plan20);
-            newPlan20 = Plan20;
-            progress_lb.Content = "... Copying to phase 30 ...";
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan30 = CalcPhoton(img30, rec_30, ph_prefix + "30", SelectedPlan);
-            AddPhasePlan(CT30_plan_cb, Plan30);
-            newPlan30 = Plan30;
-            progress_lb.Content = "... Copying to phase 40 ...";
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan40 = CalcPhoton(img40, rec_40, ph_prefix + "40", SelectedPlan);
-            AddPhasePlan(CT40_plan_cb, Plan40);
-            newPlan40 = Plan40;
-            progress_lb.Content = "... Copying to phase 50 ...";
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan50 = CalcPhoton(img50, rec_50, ph_prefix + "50", SelectedPlan);
-            AddPhasePlan(CT50_plan_cb, Plan50);
-            newPlan50 = Plan50;
-            progress_lb.Content = "... Copying to phase 60 ...";
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan60 = CalcPhoton(img60, rec_60, ph_prefix + "60", SelectedPlan);
-            AddPhasePlan(CT60_plan_cb, Plan60);
-            newPlan60 = Plan60;
-            progress_lb.Content = "... Copying to phase 70 ...";
-            AllowUIToUpdate();
-
-
-            ExternalPlanSetup Plan70 = CalcPhoton(img70, rec_70, ph_prefix + "70", SelectedPlan);
-            AddPhasePlan(CT70_plan_cb, Plan70);
-            newPlan70 = Plan70;
-            progress_lb.Content = "... Copying to phase 80 ...";
-
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan80 = CalcPhoton(img80, rec_80, ph_prefix + "80", SelectedPlan);
-            AddPhasePlan(CT80_plan_cb, Plan80);
-            newPlan80 = Plan80;
-            progress_lb.Content = "... Copying to phase 90 ...";
-
-            AllowUIToUpdate();
-
-            ExternalPlanSetup Plan90 = CalcPhoton(img90, rec_90, ph_prefix + "90", SelectedPlan);
-            AddPhasePlan(CT90_plan_cb, Plan90);
-            newPlan90 = Plan90;
-            progress_lb.Content = "...All plans are copied ...";
-            AllowUIToUpdate();
-        }
-
+      
         /// <summary>
         /// Copying a selected proton plan to all phases and calculating the dose.
         /// </summary>
@@ -1367,6 +1490,74 @@ namespace Evaluering4D
         }
 
         /// <summary>
+        /// Copying a selected proton plan to a single phase and calculating the dose
+        /// A rectangle is colored green if the calculation is a sucess.
+        /// </summary>
+        /// <param name="img">The source phase image</param>
+        /// <param name="rec">The box on the UI that shows if the calculations went correct</param>
+        /// <param name="name">The new ID for the 4D plan</param>
+        /// <param name="copyFrom">The original plan that will be copied</param>
+        /// <returns></returns>
+        private IonPlanSetup CalcProton(VMS.TPS.Common.Model.API.Image img, Rectangle rec, string name, PlanSetup copyFrom)
+        {
+
+            StringBuilder outputDia = new StringBuilder("");
+            IonPlanSetup plan = null;
+
+            if (img == null)
+            {
+                return plan;
+            }
+
+            // If the plan is copied to the same image we do not need to calculate.
+            // If the plan is copied to a new image, we will have to calculate later.
+            if (copyFrom.StructureSet.Image.Series.UID == img.Series.UID && copyFrom.StructureSet.Image.Id == img.Id)
+            {
+                plan = copyFrom.Course.CopyPlanSetup(copyFrom) as IonPlanSetup;
+            }
+            else
+            {
+                plan = copyFrom.Course.CopyPlanSetup(copyFrom, img, outputDia) as IonPlanSetup;
+            }
+
+            plan.Id = name;
+
+
+            var res = plan.CalculateDoseWithoutPostProcessing();
+            errormessages += plan.Id + ": Proton plan" + "\n";
+
+            if (!res.Success)
+            {
+                errormessages += "Dose calculation error for plan: " + plan.Id + "\n";
+                return plan;
+            }
+            else
+            {
+                rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                return plan;
+            }
+        }
+
+        #endregion CopyProtonPlans
+
+        #region CopyNamingAndSorting
+
+        /// <summary>
+        /// Sumplans on the phase images are added to the plan comboboxes
+        /// </summary>
+        /// <param name="plan_cb">The plan combobox in the UI</param>
+        /// <param name="plan">The plan sum</param>
+        private void AddPhasePlanSum(ComboBox plan_cb, PlanSum plan)
+        {
+            if (plan_cb.SelectedItem == null && plan != null)
+            {
+                plan_cb.Items.Add(plan.Id);
+                int itemno = plan_cb.Items.Count;
+                plan_cb.SelectedItem = plan_cb.Items[itemno - 1];
+            }
+        }
+
+        /// <summary>
         /// A free prefix is found for all the new 4D plans
         /// </summary>
         /// <returns></returns>
@@ -1455,169 +1646,9 @@ namespace Evaluering4D
             }
         }
 
-        /// <summary>
-        /// Copying a selected photon plan to a single phase and calculating the dose.
-        /// The method is different for VMAT and IMRT/static.
-        /// A rectangle is colored green if the calculation is a sucess.
-        /// </summary>
-        /// <param name="img">The source phase image</param>
-        /// <param name="rec">The box on the UI that shows if the calculations went correct</param>
-        /// <param name="name">The new ID for the 4D plan</param>
-        /// <param name="copyFrom">The original plan that will be copied</param>
-        /// <returns></returns>
-        private ExternalPlanSetup CalcPhoton(VMS.TPS.Common.Model.API.Image img, Rectangle rec, string name,PlanSetup copyFrom)
-        {
-            StringBuilder outputDia = new StringBuilder("");
-            ExternalPlanSetup plan = null;
+        #endregion CopyNamingAndSorting
 
-            if (img == null)
-            {
-                return plan;
-            }
-
-            // If the plan is copied to the same image we do not need to calculate.
-            // If the plan is copied to a new image, we will have to calculate later.
-            // The copy-method is the same for IMRT og VMAT
-            if (copyFrom.StructureSet.Image.Id == img.Id && copyFrom.StructureSet.Image.Series.UID == img.Series.UID)
-            {
-                plan = copyFrom.Course.CopyPlanSetup(copyFrom) as ExternalPlanSetup;
-                rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
-                plan.Id = name;
-                return plan;
-            }
-            else
-            {
-                plan = copyFrom.Course.CopyPlanSetup(copyFrom, img, outputDia) as ExternalPlanSetup;
-            }
-
-            plan.Id = name;
-
-
-            // IMRT plans are copied now
-            if (plan.Beams.First().Technique.ToString().ToUpper() == "STATIC")
-            {
-                errormessages += plan.Id + ": IMRT or static photon plan" + "\n";
-
-                //The MU settings are copied from the original plan. This is the initialisation of the list of values for each beam in the plan.
-                List<KeyValuePair<string, MetersetValue>> calculateIMRT = new List<KeyValuePair<string, MetersetValue>>();
-
-                foreach (var item in copyFrom.Beams)
-                {
-                    KeyValuePair<string, MetersetValue> temp = new KeyValuePair<string, MetersetValue>(item.Id, item.Meterset);
-                    calculateIMRT.Add(temp);
-                }
-
-                // If the LMC can be calculated now we will do it.
-                // I dont understand why I sometimes have to do it and otherwise not. 
-                // Maybe this part can be completely skipped. However it does not hurt as the exception is caught and ignored when it is impossible...
-                try
-                {
-                    var res2 = plan.CalculateLeafMotions();
-                    errormessages += "Leafmotion calculated for: " + plan.Id + "\n";
-
-                    if (!res2.Success)
-                    {
-                        errormessages += "Leafmotion calculation error for plan: " + plan.Id + "\n";
-                        return plan;
-                    }
-                }
-                catch (Exception)
-                {
-                    errormessages += "Leafmotion not calculated for: " + plan.Id + "\n";
-
-                }
-
-                //The dose is calculated
-                var res = plan.CalculateDoseWithPresetValues(calculateIMRT);
-
-                //The normalization is set.
-                if (plan.PlanNormalizationValue != copyFrom.PlanNormalizationValue)
-                {
-                    plan.PlanNormalizationValue = copyFrom.PlanNormalizationValue;
-                }
-
-                // If the calculation fails or not...
-                if (!res.Success)
-                {
-                    errormessages += "Dose calculation error for plan: " + plan.Id + "\n";
-                    return plan;
-                }
-                else
-                {
-                    rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
-                    return plan;
-                }
-
-            }
-            else //VMAT plans are handeled differently as there is no need for preset MU
-            {
-                errormessages += plan.Id + ": VMAT plan" + "\n";
-
-                var res = plan.CalculateDose();
-
-                if (!res.Success)
-                {
-                    errormessages += "Dose calculation error for plan: " + plan.Id + "\n";
-                    return plan;
-                }
-                else
-                {
-                    rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
-                    plan.PlanNormalizationValue = copyFrom.PlanNormalizationValue;
-                    return plan;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Copying a selected proton plan to a single phase and calculating the dose
-        /// A rectangle is colored green if the calculation is a sucess.
-        /// </summary>
-        /// <param name="img">The source phase image</param>
-        /// <param name="rec">The box on the UI that shows if the calculations went correct</param>
-        /// <param name="name">The new ID for the 4D plan</param>
-        /// <param name="copyFrom">The original plan that will be copied</param>
-        /// <returns></returns>
-        private IonPlanSetup CalcProton(VMS.TPS.Common.Model.API.Image img, Rectangle rec, string name, PlanSetup copyFrom)
-        {
-
-            StringBuilder outputDia = new StringBuilder("");
-            IonPlanSetup plan = null;
-
-            if (img == null)
-            {
-                return plan;
-            }
-
-            // If the plan is copied to the same image we do not need to calculate.
-            // If the plan is copied to a new image, we will have to calculate later.
-            if (copyFrom.StructureSet.Image.Series.UID == img.Series.UID && copyFrom.StructureSet.Image.Id == img.Id)
-            {
-                plan = copyFrom.Course.CopyPlanSetup(copyFrom) as IonPlanSetup;
-            }
-            else
-            {
-                plan = copyFrom.Course.CopyPlanSetup(copyFrom, img, outputDia) as IonPlanSetup;
-            }
-
-            plan.Id = name;
-
-
-            var res = plan.CalculateDoseWithoutPostProcessing();
-            errormessages += plan.Id + ": Proton plan" + "\n";
-
-            if (!res.Success)
-            {
-                errormessages += "Dose calculation error for plan: " + plan.Id + "\n";
-                return plan;
-            }
-            else
-            {
-                rec.Fill = new SolidColorBrush(Color.FromRgb(0, 255, 0));
-                return plan;
-            }
-        }
-
+        #region PlanEvaluation
         /// <summary>
         /// The dose is evaluated and the MU are compared to the original plan.
         /// The dose to the selected structures are calculated and printed in the UI. 
@@ -2291,5 +2322,8 @@ namespace Evaluering4D
             if (new90 != null) allPlans[10] = new90.PlanSetups.ElementAt(i);
             return allPlans;
         }
+
+        #endregion PlanEvaluation
+
     }
 }
