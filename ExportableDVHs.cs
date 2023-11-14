@@ -68,7 +68,8 @@ namespace Evaluering4D
                 if (!AllPlans[i].IsDoseValid) continue; //If the plans for some reason are not calculated. This can happen if a materials tabel is missing.
                
                 string filename = AllPlanIds[i];
-                string firstLine = "Nominal dose. Plan id: " + AllPlanIds[i];
+                string firstLine = "Nominal dose. Plan id: " + AllPlanIds[i] + "calculated on CT: " + AllPlans[i].StructureSet.Image.Id;
+                string modalityLine = "Modality: " + AllPlans[i].PlanType.ToString() + ", Dose grid size [cm]: [" + AllPlans[i].Dose.XRes.ToString("0.00") + ", " + AllPlans[i].Dose.YRes.ToString("0.00") + ", " + AllPlans[i].Dose.ZRes.ToString("0.00") + "], Number of fractions: " + AllPlans[i].NumberOfFractions.ToString() + " and total prescribed dose: " + AllPlans[0].TotalDose.Dose.ToString("0.00") + " Gy" + Environment.NewLine;
 
                 //Data is collected in a large matrix and we need to determine the size first, by finding the largest DVH for all structures and the number of structures..
                 int largestDVH = FindLargestDVH(AllPlans[i], DvhResolution);
@@ -91,21 +92,23 @@ namespace Evaluering4D
                 double[] DyyList = new double[numbOfStructs];
                 double[] DzzList = new double[numbOfStructs];
 
-                // The header consists of the volume of the structure, the min, max and mean dose and D0.05, D0.1 and D0.5 DVH'points as they need a high resolution of the extracted DVH which is not provided.
+                // The header consists of the volume of the structure, the min, max and mean dose and D0.05cc, D0.5cc and D1cc DVH'points as they need a high resolution of the extracted DVH which is not provided.
                 FillIminmaxmean(minList, maxList, meanList, DxxList,DyyList,DzzList, AllPlans[i], DvhResolution);
 
-                WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList,DxxList, DyyList, DzzList); //MULTI
+                WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList,DxxList, DyyList, DzzList, modalityLine); //MULTI
             }
 
             //We are checking if the nominal plan has uncertainty scenarios. If yes we need to export them as well.
             if (AllPlans[0].PlanUncertainties.Count() != 0)
             {
+                string modalityLine = "Modality: " + AllPlans[0].PlanType.ToString() + ", Dose grid size [cm]: [" + AllPlans[0].Dose.XRes.ToString("0.00") + ", " + AllPlans[0].Dose.YRes.ToString("0.00") + ", " + AllPlans[0].Dose.ZRes.ToString("0.00") + "], Number of fractions: " + AllPlans[0].NumberOfFractions.ToString() + " and total prescribed dose: " + AllPlans[0].TotalDose.Dose.ToString("0.00") + " Gy" + Environment.NewLine;
+
                 foreach (var uncert in AllPlans[0].PlanUncertainties)
                 {
                     if (uncert.Dose == null) continue;
 
                     string filename = AllPlans[0].Id.Substring(0, 2) + "_" + uncert.Id;
-                    string firstLine = "Uncertainty scenario: " + uncert.DisplayName + " to nominal plan: " + AllPlans[0].Id;
+                    string firstLine = "Uncertainty scenario: " + uncert.DisplayName + " to nominal plan: " + AllPlans[0].Id + " calculated on CT: " + AllPlans[0].StructureSet.Image.Id;
 
                     //Data is collected in a large matrix and we need to determine the size first.
                     int largestDVH = FindLargestDVH(AllPlans[0], uncert, DvhResolution);
@@ -130,7 +133,7 @@ namespace Evaluering4D
 
                     FillIminmaxmean(minList, maxList, meanList, DxxList, DyyList,DzzList, AllPlans[0], uncert, DvhResolution); // Values for the uncertainty scenario
 
-                    WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList,DxxList,DyyList,DzzList);
+                    WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList,DxxList,DyyList,DzzList, modalityLine);
                 }
             }
         }
@@ -142,8 +145,8 @@ namespace Evaluering4D
         /// <param name="maxList">List of max dose for each structure</param>
         /// <param name="meanList">List of mean dose for each structure</param>
         /// <param name="DxxList"> List of D0.05cc values in Gy </param>
-        /// <param name="DyyList">List of D0.1cc values in Gy</param>
-        /// <param name="DzzList">List of D0.5cc values in Gy</param>
+        /// <param name="DyyList">List of D0.5cc values in Gy</param>
+        /// <param name="DzzList">List of D1.0cc values in Gy</param>
         /// <param name="planSetup">The single plan to extract from</param>
         /// <param name="dvhresolution">The dvh resolution</param>
         private void FillIminmaxmean(double[] minList, double[] maxList, double[] meanList, double[] DxxList, double[] DyyList,double[] DzzList, PlanSetup planSetup, double dvhresolution)
@@ -164,8 +167,8 @@ namespace Evaluering4D
                 //We need a high resolution for the volume datapoints
                 DVHData dvhdata2 = planSetup.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.001);
                 DxxList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.05, planSetup.TotalDose.Dose);
-                DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.1, planSetup.TotalDose.Dose);
-                DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose);
+                DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose);
+                DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose);
 
                 countStruct++;
             }
@@ -178,8 +181,8 @@ namespace Evaluering4D
         /// <param name="maxList">List of max dose for each structure</param>
         /// <param name="meanList">List of mean dose for each structure</param>
         /// <param name="DxxList"> List of D0.05cc values in Gy </param>
-        /// <param name="DyyList">List of D0.1cc values in Gy</param>
-        /// <param name="DzzList">List of D0.5cc values in Gy</param>
+        /// <param name="DyyList">List of D0.5cc values in Gy</param>
+        /// <param name="DzzList">List of D1.0cc values in Gy</param>
         /// <param name="planSetup">The plan to extract from</param>
         /// <param name="dvhresolution">The dvh resolution</param>
         private void FillIminmaxmean(double[] minList, double[] maxList, double[] meanList, double[] DxxList, double[] DyyList, double[] DzzList, PlanSetup planSetup, PlanUncertainty uncert, double dvhresolution)
@@ -200,8 +203,8 @@ namespace Evaluering4D
                 //We need a high resolution for the volume datapoints
                 DVHData dvhdata2 = uncert.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.001);
                 DxxList[countStruct] = CalculateDXXcc(dvhdata2.CurveData,0.05,planSetup.TotalDose.Dose);
-                DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.1, planSetup.TotalDose.Dose); 
-                DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose); 
+                DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose); 
+                DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose); 
                 countStruct++;
             }
         }
@@ -242,11 +245,14 @@ namespace Evaluering4D
         /// <param name="maxList">All maximum doses</param>
         /// <param name="meanList">All mean doses</param>
         /// <param name="DxxList"> All D0.05cc values in Gy </param>
-        /// <param name="DyyList">All D0.1cc values in Gy</param>
-        /// <param name="DzzList">All D0.5cc values in Gy</param>
-        private void WriteDVHfile(string v, string filename, double[,] dvhList, string[] idList, int numbOfStructs, int largestDVH, string firstLine, double[] volList, double[] minList, double[] maxList, double[] meanList, double[] DxxList, double[] DyyList, double[] DzzList)
+        /// <param name="DyyList">All D0.5cc values in Gy</param>
+        /// <param name="DzzList">All D1.0cc values in Gy</param>
+        /// <param name="modalityLine">Line descriping modality, resolution of dose and fractionation</param>
+        private void WriteDVHfile(string v, string filename, double[,] dvhList, string[] idList, int numbOfStructs, int largestDVH, string firstLine, double[] volList, double[] minList, double[] maxList, double[] meanList, double[] DxxList, double[] DyyList, double[] DzzList,string modalityLine)
         {
             string lines = firstLine + Environment.NewLine;
+
+            lines += modalityLine;
 
             //Structure IDs are added
             string temp = "";
@@ -256,49 +262,49 @@ namespace Evaluering4D
             }
             lines += temp + Environment.NewLine;
 
-            temp = "volume (cc) \t";
+            temp = "Volume [cc] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
                 temp += Math.Round(volList[p],2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
             }
             lines += temp + Environment.NewLine;
 
-            temp = "Min Dose (Gy) \t";
+            temp = "Min dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
                 temp += Math.Round(minList[p],2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
             }
             lines += temp + Environment.NewLine;
 
-            temp = "Max Dose (Gy) \t";
+            temp = "Max dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
                 temp += Math.Round(maxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
             }
             lines += temp + Environment.NewLine;
 
-            temp = "Mean Dose (Gy) \t";
+            temp = "Mean dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
                 temp += Math.Round(meanList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
             }
             lines += temp + Environment.NewLine;
 
-            temp = "D0.05 cc (Gy) \t";
+            temp = "D0.05cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
                 temp += Math.Round(DxxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
             }
             lines += temp + Environment.NewLine;
 
-            temp = "D0.1 cc (Gy) \t";
+            temp = "D0.5cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
                 temp += Math.Round(DyyList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
             }
             lines += temp + Environment.NewLine;
 
-            temp = "D0.5 cc (Gy) \t";
+            temp = "D1cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
                 temp += Math.Round(DzzList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
@@ -373,7 +379,7 @@ namespace Evaluering4D
             dvhList[0, 0] = 0.0;
             for (int j = 1; j < largestDVH; j++)
             {
-                dvhList[j, 0] = dvhList[j - 1, 0] + 0.1;
+                dvhList[j, 0] = dvhList[j - 1, 0] + dvhresolution;
             }
 
             //Here we start by 1 as the first column is the dose
@@ -503,13 +509,14 @@ namespace Evaluering4D
         /// <returns></returns>
         private double CalculateDXXcc(DVHPoint[] DVH, double XXcc, double prescribedDose)
         {
-            if (DVH.Count() == 0 || DVH.Max(d => d.Volume) < XXcc)
+            
+            if (DVH == null || DVH.Count() == 0 || DVH.Max(d => d.Volume) < XXcc)
             {
                 return -1000.0;
             }
             else
             {
-                DVHPoint test = DVH.First(d => d.Volume <= XXcc);
+                DVHPoint test = DVH.FirstOrDefault(d => d.Volume <= XXcc);
 
                 if (test.DoseValue.IsAbsoluteDoseValue)
                 {
