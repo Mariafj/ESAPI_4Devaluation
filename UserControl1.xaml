@@ -45,7 +45,7 @@
         <Grid Background="HoneyDew" Margin="0,0,0,0">
             <Grid Margin="0,0,0,0">
 
-                <Label Content="17/10/23 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
+                <Label Content="15/11/23 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
                 <Grid HorizontalAlignment="Left" Height="195" Margin="198,50,0,0" VerticalAlignment="Top" Width="334">
                     <Label Content="2. Define structures and dose levels:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="224" FontWeight="Bold"/>
 
@@ -123,16 +123,16 @@
                     <ComboBox x:Name="CT70_cb" HorizontalAlignment="Left" Height="25" Margin="54,319,0,0" VerticalAlignment="Top" Width="145"/>
                     <ComboBox x:Name="CT80_cb" HorizontalAlignment="Left" Height="25" Margin="54,359,0,0" VerticalAlignment="Top" Width="145"/>
                     <ComboBox x:Name="CT90_cb" HorizontalAlignment="Left" Height="25" Margin="54,399,0,0" VerticalAlignment="Top" Width="145"/>
-                    <Label Content="00% CT" HorizontalAlignment="Left" Height="25" Margin="0,37,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="10% CT" HorizontalAlignment="Left" Height="25" Margin="0,77,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="20% CT" HorizontalAlignment="Left" Height="25" Margin="0,118,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="30% CT" HorizontalAlignment="Left" Height="25" Margin="0,158,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="40% CT" HorizontalAlignment="Left" Height="25" Margin="0,198,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="50% CT" HorizontalAlignment="Left" Height="25" Margin="0,238,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="60% CT" HorizontalAlignment="Left" Height="25" Margin="0,278,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="70% CT" HorizontalAlignment="Left" Height="25" Margin="0,318,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="80% CT" HorizontalAlignment="Left" Height="25" Margin="0,358,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
-                    <Label Content="90% CT" HorizontalAlignment="Left" Height="25" Margin="0,398,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="00% CT" HorizontalAlignment="Left" Height="25" Margin="0,40,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="10% CT" HorizontalAlignment="Left" Height="25" Margin="0,78,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="20% CT" HorizontalAlignment="Left" Height="25" Margin="0,119,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="30% CT" HorizontalAlignment="Left" Height="25" Margin="0,159,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="40% CT" HorizontalAlignment="Left" Height="25" Margin="0,199,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="50% CT" HorizontalAlignment="Left" Height="25" Margin="0,239,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="60% CT" HorizontalAlignment="Left" Height="25" Margin="0,279,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="70% CT" HorizontalAlignment="Left" Height="25" Margin="0,319,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="80% CT" HorizontalAlignment="Left" Height="25" Margin="0,359,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
+                    <Label Content="90% CT" HorizontalAlignment="Left" Height="25" Margin="0,399,0,0" VerticalAlignment="Top" Width="85" FontWeight="Bold"/>
                     <Label Content="Series / 4D image" HorizontalAlignment="Left" Height="26" Margin="51,5,0,0" VerticalAlignment="Top" Width="132" FontWeight="Bold"/>
                     <Label Content="V95% / % &#xA;CTV1" HorizontalAlignment="Left" Height="44" Margin="377,0,0,0" VerticalAlignment="Top" Width="73" FontWeight="Bold"/>
                     <Label Content="V95% / % &#xA;CTV2" HorizontalAlignment="Left" Height="44" Margin="457,0,0,0" VerticalAlignment="Top" Width="76" FontWeight="Bold"/>
@@ -193,16 +193,16 @@
                     <Label x:Name="CT80_SC3_lb" Content="0" HorizontalAlignment="Left" Height="25" Margin="697,358,0,0" VerticalAlignment="Top" Width="62"/>
                     <Label x:Name="CT90_SC3_lb" Content="0" HorizontalAlignment="Left" Height="25" Margin="697,398,0,0" VerticalAlignment="Top" Width="62"/>
 
-                    <ComboBox x:Name="CT00_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,39,0,0" VerticalAlignment="Top" Width="124"/>
-                    <ComboBox x:Name="CT10_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,79,0,0" VerticalAlignment="Top" Width="124"/>
+                    <ComboBox x:Name="CT00_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,38,0,0" VerticalAlignment="Top" Width="124"/>
+                    <ComboBox x:Name="CT10_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,78,0,0" VerticalAlignment="Top" Width="124"/>
                     <ComboBox x:Name="CT20_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,119,0,0" VerticalAlignment="Top" Width="124"/>
-                    <ComboBox x:Name="CT30_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,160,0,0" VerticalAlignment="Top" Width="124"/>
+                    <ComboBox x:Name="CT30_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,159,0,0" VerticalAlignment="Top" Width="124"/>
                     <ComboBox x:Name="CT40_plan_cb" HorizontalAlignment="Left" Height="24" Margin="204,0,0,0" VerticalAlignment="Center" Width="124"/>
                     <ComboBox x:Name="CT50_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,239,0,0" VerticalAlignment="Top" Width="124"/>
                     <ComboBox x:Name="CT60_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,279,0,0" VerticalAlignment="Top" Width="124"/>
                     <ComboBox x:Name="CT70_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,320,0,0" VerticalAlignment="Top" Width="124"/>
                     <ComboBox x:Name="CT80_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,359,0,0" VerticalAlignment="Top" Width="124"/>
-                    <ComboBox x:Name="CT90_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,400,0,0" VerticalAlignment="Top" Width="124"/>
+                    <ComboBox x:Name="CT90_plan_cb" HorizontalAlignment="Left" Height="25" Margin="204,399,0,0" VerticalAlignment="Top" Width="124"/>
                     <Label Content="4D plan" HorizontalAlignment="Left" Height="26" Margin="204,5,0,0" VerticalAlignment="Top" Width="66" FontWeight="Bold"/>
                     <Rectangle x:Name="rec_00" Fill="Red" HorizontalAlignment="Left" Height="25" Margin="336,39,0,0" Stroke="Black" VerticalAlignment="Top" Width="26"/>
                     <Rectangle x:Name="rec_10" Fill="Red" HorizontalAlignment="Left" Height="25" Margin="336,77,0,0" Stroke="Black" VerticalAlignment="Top" Width="26"/>

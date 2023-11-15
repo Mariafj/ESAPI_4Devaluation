@@ -334,7 +334,7 @@ namespace Evaluering4D
             foreach (var img in MainStructureSet.Image.Series.Study.Images3D)
             {
                 //We do not want to calculate on a MIP
-                if (img.Series.Comment.ToString().ToUpper().Contains("MIP"))
+                if (img.Series.Comment.ToString().ToUpper().Contains("MIP")  || img.Series.Id.ToUpper().Contains("MIP"))
                 {
                     continue;
                 }

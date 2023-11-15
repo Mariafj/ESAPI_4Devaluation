@@ -165,7 +165,7 @@ namespace Evaluering4D
                 meanList[countStruct] = dvhdata.MeanDose.Dose;
 
                 //We need a high resolution for the volume datapoints
-                DVHData dvhdata2 = planSetup.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.001);
+                DVHData dvhdata2 = planSetup.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.0001);
                 DxxList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.05, planSetup.TotalDose.Dose);
                 DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose);
                 DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose);
@@ -201,7 +201,7 @@ namespace Evaluering4D
                 meanList[countStruct] = dvhdata.MeanDose.Dose;
 
                 //We need a high resolution for the volume datapoints
-                DVHData dvhdata2 = uncert.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.001);
+                DVHData dvhdata2 = uncert.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.0001);
                 DxxList[countStruct] = CalculateDXXcc(dvhdata2.CurveData,0.05,planSetup.TotalDose.Dose);
                 DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose); 
                 DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose); 
@@ -265,49 +265,49 @@ namespace Evaluering4D
             temp = "Volume [cc] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(volList[p],2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(volList[p],3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "Min dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(minList[p],2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(minList[p],3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "Max dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(maxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(maxList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "Mean dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(meanList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(meanList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D0.05cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DxxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(DxxList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D0.5cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DyyList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(DyyList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D1cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DzzList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(DzzList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
@@ -318,7 +318,7 @@ namespace Evaluering4D
 
                 for (int p = 0; p < numbOfStructs + 1; p++)
                 {
-                    temp += Math.Round(dvhList[h, p],2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                    temp += Math.Round(dvhList[h, p],3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
                 }
                 lines += temp + Environment.NewLine;
             }
