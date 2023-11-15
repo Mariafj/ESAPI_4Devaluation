@@ -68,8 +68,8 @@ namespace Evaluering4D
                 if (!AllPlans[i].IsDoseValid) continue; //If the plans for some reason are not calculated. This can happen if a materials tabel is missing.
                
                 string filename = AllPlanIds[i];
-                string firstLine = "Nominal dose. Plan id: " + AllPlanIds[i] + "calculated on CT: " + AllPlans[i].StructureSet.Image.Id;
-                string modalityLine = "Modality: " + AllPlans[i].PlanType.ToString() + ", Dose grid size [cm]: [" + AllPlans[i].Dose.XRes.ToString("0.00") + ", " + AllPlans[i].Dose.YRes.ToString("0.00") + ", " + AllPlans[i].Dose.ZRes.ToString("0.00") + "], Number of fractions: " + AllPlans[i].NumberOfFractions.ToString() + " and total prescribed dose: " + AllPlans[0].TotalDose.Dose.ToString("0.00") + " Gy" + Environment.NewLine;
+                string firstLine = "Plan id: " + AllPlanIds[i] + " calculated on CT: " + AllPlans[i].StructureSet.Image.Id;
+                string modalityLine = "Modality: " + AllPlans[i].PlanType.ToString() + ", Dose grid size [cm]: [" + AllPlans[i].Dose.XRes.ToString("0.00") + ", " + AllPlans[i].Dose.YRes.ToString("0.00") + ", " + AllPlans[i].Dose.ZRes.ToString("0.00") + "], Number of fractions: " + AllPlans[i].NumberOfFractions.ToString() + ", Prescribed dose: " + AllPlans[0].TotalDose.Dose.ToString("0.00") + " Gy" + Environment.NewLine;
 
                 //Data is collected in a large matrix and we need to determine the size first, by finding the largest DVH for all structures and the number of structures..
                 int largestDVH = FindLargestDVH(AllPlans[i], DvhResolution);
@@ -101,7 +101,7 @@ namespace Evaluering4D
             //We are checking if the nominal plan has uncertainty scenarios. If yes we need to export them as well.
             if (AllPlans[0].PlanUncertainties.Count() != 0)
             {
-                string modalityLine = "Modality: " + AllPlans[0].PlanType.ToString() + ", Dose grid size [cm]: [" + AllPlans[0].Dose.XRes.ToString("0.00") + ", " + AllPlans[0].Dose.YRes.ToString("0.00") + ", " + AllPlans[0].Dose.ZRes.ToString("0.00") + "], Number of fractions: " + AllPlans[0].NumberOfFractions.ToString() + " and total prescribed dose: " + AllPlans[0].TotalDose.Dose.ToString("0.00") + " Gy" + Environment.NewLine;
+                string modalityLine = "Modality: " + AllPlans[0].PlanType.ToString() + ", Dose grid size [cm]: [" + AllPlans[0].Dose.XRes.ToString("0.00") + ", " + AllPlans[0].Dose.YRes.ToString("0.00") + ", " + AllPlans[0].Dose.ZRes.ToString("0.00") + "], Number of fractions: " + AllPlans[0].NumberOfFractions.ToString() + ", Prescribed dose: " + AllPlans[0].TotalDose.Dose.ToString("0.00") + " Gy" + Environment.NewLine;
 
                 foreach (var uncert in AllPlans[0].PlanUncertainties)
                 {
@@ -265,49 +265,49 @@ namespace Evaluering4D
             temp = "Volume [cc] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(volList[p],2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                temp += Math.Round(volList[p],2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "Min dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(minList[p],2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                temp += Math.Round(minList[p],2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "Max dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(maxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                temp += Math.Round(maxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "Mean dose [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(meanList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                temp += Math.Round(meanList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D0.05cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DxxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                temp += Math.Round(DxxList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D0.5cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DyyList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                temp += Math.Round(DyyList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D1cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DzzList[p], 2, MidpointRounding.AwayFromZero).ToString("0.00") + "\t";
+                temp += Math.Round(DzzList[p], 2, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
@@ -517,6 +517,12 @@ namespace Evaluering4D
             else
             {
                 DVHPoint test = DVH.FirstOrDefault(d => d.Volume <= XXcc);
+
+                if (test.DoseValue == null)
+                {
+                    return -1000.0;
+                }
+
 
                 if (test.DoseValue.IsAbsoluteDoseValue)
                 {
