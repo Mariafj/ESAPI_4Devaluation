@@ -334,7 +334,7 @@ namespace Evaluering4D
             foreach (var img in MainStructureSet.Image.Series.Study.Images3D)
             {
                 //We do not want to calculate on a MIP
-                if (img.Series.Comment.ToString().ToUpper().Contains("MIP")  || img.Series.Id.ToUpper().Contains("MIP"))
+                if (img.Series.Comment.ToString().ToUpper().Contains("MIP")  || img.Id.ToUpper().Contains("MIP"))
                 {
                     continue;
                 }
@@ -505,96 +505,6 @@ namespace Evaluering4D
             SelectImagesE_btn.IsEnabled = true;
 
             //Errormessages are written in the UI.
-            Errors_txt.Text = errormessages;
-        }
-
-        /// <summary>
-        /// The plans are copied to the phases and new buttons are enabled.
-        /// The copy process depends on the plan type.
-        /// </summary>
-        private void CopyPlan_btn_Click(object sender, RoutedEventArgs e)
-        {
-            ScriptInfo.Patient.BeginModifications();
-
-            string[] body = new string[10];
-            string[] calib = new string[10];
-            string[] overwrite = new string[10];
-
-            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
-
-            AdjustPhaseImages adjustPhaseImages = new AdjustPhaseImages(imageList, ScriptInfo, MainStructureSet);
-       
-            if (body_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... creating structure sets and BODY ...";
-                AllowUIToUpdate();
-
-                body = adjustPhaseImages.CreateBody();
-            }
-
-            if (copybody_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... copying BODY ...";
-                AllowUIToUpdate();
-
-                body = adjustPhaseImages.CopyBody();
-            }
-
-            if (calib_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... Setting calibration curves ...";
-                AllowUIToUpdate();
-                calib = adjustPhaseImages.CopyCalibration();
-            }
-
-            if (overw_chb.IsChecked == true)
-            {
-                progress_lb.Content = "... Copying and overwriting structures ...";
-                AllowUIToUpdate();
-                overwrite = adjustPhaseImages.OverwriteStructures();
-            }
-
-            for (int i = 0; i < 10; i++)
-            {
-                if (body[i] != "" || calib[i] != "" || overwrite[i] != "")
-                {
-                    errormessages += " PHASE " + i.ToString() + " : \n";
-                    errormessages += body[i];
-                    errormessages += calib[i];
-                    errormessages += overwrite[i];
-                }
-            }
-
-            Errors_txt.Text = errormessages;
-
-            if (SelectedPlan != null && SelectedPlan.PlanType.ToString().Contains("Proton")) //single plan and proton plan
-            {
-                progress_lb.Content = "... Copying proton plans ...";
-                AllowUIToUpdate();
-                CopyProtons();
-            }
-            else if (SelectedPlan != null) // single plan and photon plan
-            {
-                progress_lb.Content = "... Copying photon plans ...";
-                AllowUIToUpdate();
-                CopyPhotons();
-            }
-            if (SelectedPlanSum != null && SelectedPlanSum.PlanSetups.First().PlanType.ToString().Contains("Proton")) //Sum plan and proton plan
-            {
-                progress_lb.Content = "... Copying proton sum plans ...";
-                AllowUIToUpdate();
-                CopyProtonsSum();
-            }
-            else if (SelectedPlanSum != null) //Sum plan and photon plan
-            {
-                progress_lb.Content = "... Copying photon sum plans ...";
-                AllowUIToUpdate();
-                CopyPhotonsSum();
-            }
-
-            // The evaluation button is pressed automatically in this case.
-            EvalDoseE_btn.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
-            EvalDoseE_btn.IsEnabled = true;
             Errors_txt.Text = errormessages;
         }
 
@@ -880,6 +790,99 @@ namespace Evaluering4D
 
         #endregion FindAndSelectImages
 
+        #region AdjustImages
+        /// <summary>
+        /// The plans are copied to the phases and new buttons are enabled.
+        /// The copy process depends on the plan type.
+        /// </summary>
+        private void CopyPlan_btn_Click(object sender, RoutedEventArgs e)
+        {
+            ScriptInfo.Patient.BeginModifications();
+
+            string[] body = new string[10];
+            string[] calib = new string[10];
+            string[] overwrite = new string[10];
+
+            VMS.TPS.Common.Model.API.Image[] imageList = new VMS.TPS.Common.Model.API.Image[10] { img00, img10, img20, img30, img40, img50, img60, img70, img80, img90 };
+
+            AdjustPhaseImages adjustPhaseImages = new AdjustPhaseImages(imageList, ScriptInfo, MainStructureSet);
+
+            if (body_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... creating structure sets and BODY ...";
+                AllowUIToUpdate();
+
+                body = adjustPhaseImages.CreateBody();
+            }
+
+            if (copybody_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... copying BODY ...";
+                AllowUIToUpdate();
+
+                body = adjustPhaseImages.CopyBody();
+            }
+
+            if (calib_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... Setting calibration curves ...";
+                AllowUIToUpdate();
+                calib = adjustPhaseImages.CopyCalibration();
+            }
+
+            if (overw_chb.IsChecked == true)
+            {
+                progress_lb.Content = "... Copying and overwriting structures ...";
+                AllowUIToUpdate();
+                overwrite = adjustPhaseImages.OverwriteStructures();
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (body[i] != "" || calib[i] != "" || overwrite[i] != "")
+                {
+                    errormessages += " PHASE " + i.ToString() + " : \n";
+                    errormessages += body[i];
+                    errormessages += calib[i];
+                    errormessages += overwrite[i];
+                }
+            }
+
+            Errors_txt.Text = errormessages;
+
+            if (SelectedPlan != null && SelectedPlan.PlanType.ToString().Contains("Proton")) //single plan and proton plan
+            {
+                progress_lb.Content = "... Copying proton plans ...";
+                AllowUIToUpdate();
+                CopyProtons();
+            }
+            else if (SelectedPlan != null) // single plan and photon plan
+            {
+                progress_lb.Content = "... Copying photon plans ...";
+                AllowUIToUpdate();
+                CopyPhotons();
+            }
+            if (SelectedPlanSum != null && SelectedPlanSum.PlanSetups.First().PlanType.ToString().Contains("Proton")) //Sum plan and proton plan
+            {
+                progress_lb.Content = "... Copying proton sum plans ...";
+                AllowUIToUpdate();
+                CopyProtonsSum();
+            }
+            else if (SelectedPlanSum != null) //Sum plan and photon plan
+            {
+                progress_lb.Content = "... Copying photon sum plans ...";
+                AllowUIToUpdate();
+                CopyPhotonsSum();
+            }
+
+            // The evaluation button is pressed automatically in this case.
+            EvalDoseE_btn.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            EvalDoseE_btn.IsEnabled = true;
+            Errors_txt.Text = errormessages;
+        }
+
+        #endregion AdjustImages
+
         #region CopyPhotonPlans
 
         /// <summary>
@@ -913,56 +916,45 @@ namespace Evaluering4D
             {
                 var copyFrom = SelectedPlanSum.PlanSetups.ElementAt(i);
 
-
-                progress_lb.Content = "... Copying to phase 00 ...";
+                progress_lb.Content = "... Copying to phase 00 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list0.Add(CalcPhoton(img00, rec_00, ph_prefix + "00_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 10 ...";
+                progress_lb.Content = "... Copying to phase 10 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list1.Add(CalcPhoton(img10, rec_10, ph_prefix + "10_" + i.ToString(), copyFrom));
                 
-
-                progress_lb.Content = "... Copying to phase 20 ...";
+                progress_lb.Content = "... Copying to phase 20 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list2.Add(CalcPhoton(img20, rec_20, ph_prefix + "20_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 30 ...";
+                progress_lb.Content = "... Copying to phase 30 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list3.Add(CalcPhoton(img30, rec_30, ph_prefix + "30_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 40 ...";
+                progress_lb.Content = "... Copying to phase 40 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list4.Add(CalcPhoton(img40, rec_40, ph_prefix + "40_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 50 ...";
+                progress_lb.Content = "... Copying to phase 50 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list5.Add(CalcPhoton(img50, rec_50, ph_prefix + "50_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 60 ...";
+                progress_lb.Content = "... Copying to phase 60 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list6.Add(CalcPhoton(img60, rec_60, ph_prefix + "60_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 70 ...";
+                progress_lb.Content = "... Copying to phase 70 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list7.Add(CalcPhoton(img70, rec_70, ph_prefix + "70_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 80 ...";
+                progress_lb.Content = "... Copying to phase 80 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list8.Add(CalcPhoton(img80, rec_80, ph_prefix + "80_" + i.ToString(), copyFrom));
 
-
-                progress_lb.Content = "... Copying to phase 90 ...";
+                progress_lb.Content = "... Copying to phase 90 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list9.Add(CalcPhoton(img90, rec_90, ph_prefix + "90_" + i.ToString(), copyFrom));
-
 
                 progress_lb.Content = "...All plans are copied ...";
                 AllowUIToUpdate();
@@ -1272,54 +1264,54 @@ namespace Evaluering4D
             {
                 var copyFrom = SelectedPlanSum.PlanSetups.ElementAt(i);
 
-                progress_lb.Content = "... Copying to phase 00 ...";
+                progress_lb.Content = "... Copying to phase 00 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
                 list0.Add(CalcProton(img00, rec_00, pro_prefix + "00_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 10 ...";
+                progress_lb.Content = "... Copying to phase 10 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img10, rec_10, pro_prefix + "10_" + i.ToString(), copyFrom));
+                list1.Add(CalcProton(img10, rec_10, pro_prefix + "10_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 20 ...";
+                progress_lb.Content = "... Copying to phase 20 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img20, rec_20, pro_prefix + "20_" + i.ToString(), copyFrom));
+                list2.Add(CalcProton(img20, rec_20, pro_prefix + "20_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 30 ...";
+                progress_lb.Content = "... Copying to phase 30 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img30, rec_30, pro_prefix + "30_" + i.ToString(), copyFrom));
+                list3.Add(CalcProton(img30, rec_30, pro_prefix + "30_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 40 ...";
+                progress_lb.Content = "... Copying to phase 40 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img40, rec_40, pro_prefix + "40_" + i.ToString(), copyFrom));
+                list4.Add(CalcProton(img40, rec_40, pro_prefix + "40_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 50 ...";
+                progress_lb.Content = "... Copying to phase 50 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img50, rec_50, pro_prefix + "50_" + i.ToString(), copyFrom));
+                list5.Add(CalcProton(img50, rec_50, pro_prefix + "50_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 60 ...";
+                progress_lb.Content = "... Copying to phase 60 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img60, rec_60, pro_prefix + "60_" + i.ToString(), copyFrom));
+                list6.Add(CalcProton(img60, rec_60, pro_prefix + "60_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 70 ...";
+                progress_lb.Content = "... Copying to phase 70 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img70, rec_70, pro_prefix + "70_" + i.ToString(), copyFrom));
+                list7.Add(CalcProton(img70, rec_70, pro_prefix + "70_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 80 ...";
+                progress_lb.Content = "... Copying to phase 80 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img80, rec_80, pro_prefix + "80_" + i.ToString(), copyFrom));
+                list8.Add(CalcProton(img80, rec_80, pro_prefix + "80_" + i.ToString(), copyFrom));
 
 
-                progress_lb.Content = "... Copying to phase 90 ...";
+                progress_lb.Content = "... Copying to phase 90 for plan no. " + i.ToString() + " ...";
                 AllowUIToUpdate();
-                list0.Add(CalcProton(img90, rec_90, pro_prefix + "90_" + i.ToString(), copyFrom));
+                list9.Add(CalcProton(img90, rec_90, pro_prefix + "90_" + i.ToString(), copyFrom));
 
 
                 progress_lb.Content = "...All plans are copied ...";

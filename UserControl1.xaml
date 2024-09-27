@@ -45,7 +45,7 @@
         <Grid Background="HoneyDew" Margin="0,0,0,0">
             <Grid Margin="0,0,0,0">
 
-                <Label Content="15/11/23 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
+                <Label Content="27/09/24 MFJ" HorizontalAlignment="Left" Height="27" Margin="902,20,0,0" VerticalAlignment="Top" Width="98"/>
                 <Grid HorizontalAlignment="Left" Height="195" Margin="198,50,0,0" VerticalAlignment="Top" Width="334">
                     <Label Content="2. Define structures and dose levels:" HorizontalAlignment="Left" Height="26" VerticalAlignment="Top" Width="224" FontWeight="Bold"/>
 
@@ -223,7 +223,7 @@
                     <Label Content="Gy" HorizontalAlignment="Left" Height="28" Margin="49,46,0,0" VerticalAlignment="Top" Width="28"/>
                     <Label Content="DVH resolution:" HorizontalAlignment="Left" Height="28" Margin="0,26,0,0" VerticalAlignment="Top" Width="92"/>
                 </Grid>
-                <Label Content="4D evaluation script - Read and Write" HorizontalAlignment="Left" Height="47" Margin="9,10,0,0" VerticalAlignment="Top" Width="523" FontWeight="Bold" FontSize="24" Grid.ColumnSpan="2"/>
+                <Label Content="4D evaluation script" HorizontalAlignment="Left" Height="47" Margin="9,10,0,0" VerticalAlignment="Top" Width="523" FontWeight="Bold" FontSize="24" Grid.ColumnSpan="2"/>
             </Grid>
             <Label x:Name="progress_lb" Content="" HorizontalAlignment="Center" Height="34" Margin="0,255,0,0" VerticalAlignment="Top" Width="999" FontSize="16"/>
         </Grid>
