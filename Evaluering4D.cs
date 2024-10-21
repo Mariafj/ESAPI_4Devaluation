@@ -40,7 +40,7 @@ using System.Reflection;
 [assembly: ESAPIScript(IsWriteable = true)]
 
 
-[assembly: AssemblyVersion("3.0.0.10")] //This parameter must be changed when the script is changed. Hereafter the script must be approved in Eclipse.
+[assembly: AssemblyVersion("3.0.0.12")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 [assembly: AssemblyInformationalVersion("1.0")]
 

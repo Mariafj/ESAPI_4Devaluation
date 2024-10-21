@@ -7,7 +7,7 @@
     <OutputType>library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Evaluering4D</RootNamespace>
-    <AssemblyName>Test_Evaluering4D_151123_a.esapi</AssemblyName>
+    <AssemblyName>Evaluering4D_v3.esapi</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>

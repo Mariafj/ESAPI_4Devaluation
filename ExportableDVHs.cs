@@ -88,14 +88,15 @@ namespace Evaluering4D
                 double[] minList = new double[numbOfStructs];
                 double[] maxList = new double[numbOfStructs];
                 double[] meanList = new double[numbOfStructs];
-                double[] DxxList = new double[numbOfStructs];
-                double[] DyyList = new double[numbOfStructs];
-                double[] DzzList = new double[numbOfStructs];
+                double[] D005List = new double[numbOfStructs];
+                double[] D050List = new double[numbOfStructs];
+                double[] D100List = new double[numbOfStructs];
+                double[] D500List = new double[numbOfStructs];
 
                 // The header consists of the volume of the structure, the min, max and mean dose and D0.05cc, D0.5cc and D1cc DVH'points as they need a high resolution of the extracted DVH which is not provided.
-                FillIminmaxmean(minList, maxList, meanList, DxxList,DyyList,DzzList, AllPlans[i], DvhResolution);
+                FillIminmaxmean(minList, maxList, meanList, D005List,D050List,D100List, D500List, AllPlans[i], DvhResolution);
 
-                WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList,DxxList, DyyList, DzzList, modalityLine); //MULTI
+                WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList,D005List, D050List, D100List, D500List, modalityLine); //MULTI
             }
 
             //We are checking if the nominal plan has uncertainty scenarios. If yes we need to export them as well.
@@ -126,14 +127,14 @@ namespace Evaluering4D
                     double[] minList = new double[numbOfStructs];
                     double[] maxList = new double[numbOfStructs];
                     double[] meanList = new double[numbOfStructs];
-                    double[] DxxList = new double[numbOfStructs];
-                    double[] DyyList = new double[numbOfStructs];
-                    double[] DzzList = new double[numbOfStructs];
+                    double[] D005List = new double[numbOfStructs];
+                    double[] D050List = new double[numbOfStructs];
+                    double[] D100List = new double[numbOfStructs];
+                    double[] D500List = new double[numbOfStructs];
 
+                    FillIminmaxmean(minList, maxList, meanList, D005List, D050List, D100List, D500List, AllPlans[0], uncert, DvhResolution); // Values for the uncertainty scenario
 
-                    FillIminmaxmean(minList, maxList, meanList, DxxList, DyyList,DzzList, AllPlans[0], uncert, DvhResolution); // Values for the uncertainty scenario
-
-                    WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList,DxxList,DyyList,DzzList, modalityLine);
+                    WriteDVHfile(Folder, filename, dvhList, idList, numbOfStructs, largestDVH, firstLine, volList, minList, maxList, meanList, D005List, D050List, D100List, D500List, modalityLine);
                 }
             }
         }
@@ -144,12 +145,13 @@ namespace Evaluering4D
         /// <param name="minList">List of min dose for each structure</param>
         /// <param name="maxList">List of max dose for each structure</param>
         /// <param name="meanList">List of mean dose for each structure</param>
-        /// <param name="DxxList"> List of D0.05cc values in Gy </param>
-        /// <param name="DyyList">List of D0.5cc values in Gy</param>
-        /// <param name="DzzList">List of D1.0cc values in Gy</param>
+        /// <param name="D005List"> List of D0.05cc values in Gy </param>
+        /// <param name="D050List">List of D0.5cc values in Gy</param>
+        /// <param name="D100List">List of D1.0cc values in Gy</param>
+        /// <param name="D500List">List of D5.0cc values in Gy</param>
         /// <param name="planSetup">The single plan to extract from</param>
         /// <param name="dvhresolution">The dvh resolution</param>
-        private void FillIminmaxmean(double[] minList, double[] maxList, double[] meanList, double[] DxxList, double[] DyyList,double[] DzzList, PlanSetup planSetup, double dvhresolution)
+        private void FillIminmaxmean(double[] minList, double[] maxList, double[] meanList, double[] D005List, double[] D050List, double[] D100List, double[] D500List, PlanSetup planSetup, double dvhresolution)
         {
             int countStruct = 0;
             for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
@@ -166,9 +168,10 @@ namespace Evaluering4D
 
                 //We need a high resolution for the volume datapoints
                 DVHData dvhdata2 = planSetup.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.0001);
-                DxxList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.05, planSetup.TotalDose.Dose);
-                DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose);
-                DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose);
+                D005List[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.05, planSetup.TotalDose.Dose);
+                D050List[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose);
+                D100List[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose);
+                D500List[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 5.0, planSetup.TotalDose.Dose);
 
                 countStruct++;
             }
@@ -180,12 +183,13 @@ namespace Evaluering4D
         /// <param name="minList">List of min dose for each structure</param>
         /// <param name="maxList">List of max dose for each structure</param>
         /// <param name="meanList">List of mean dose for each structure</param>
-        /// <param name="DxxList"> List of D0.05cc values in Gy </param>
-        /// <param name="DyyList">List of D0.5cc values in Gy</param>
-        /// <param name="DzzList">List of D1.0cc values in Gy</param>
+        /// <param name="D005List"> List of D0.05cc values in Gy </param>
+        /// <param name="D050List">List of D0.5cc values in Gy</param>
+        /// <param name="D100List">List of D1.0cc values in Gy</param>
+        /// <param name="D500List">List of D5.0cc values in Gy</param>
         /// <param name="planSetup">The plan to extract from</param>
         /// <param name="dvhresolution">The dvh resolution</param>
-        private void FillIminmaxmean(double[] minList, double[] maxList, double[] meanList, double[] DxxList, double[] DyyList, double[] DzzList, PlanSetup planSetup, PlanUncertainty uncert, double dvhresolution)
+        private void FillIminmaxmean(double[] minList, double[] maxList, double[] meanList, double[] D005List, double[] D050List, double[] D100List, double[] D500List, PlanSetup planSetup, PlanUncertainty uncert, double dvhresolution)
         {
             int countStruct = 0;
             for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
@@ -202,9 +206,11 @@ namespace Evaluering4D
 
                 //We need a high resolution for the volume datapoints
                 DVHData dvhdata2 = uncert.GetDVHCumulativeData(planSetup.StructureSet.Structures.ElementAt(j), DoseValuePresentation.Absolute, VolumePresentation.AbsoluteCm3, 0.0001);
-                DxxList[countStruct] = CalculateDXXcc(dvhdata2.CurveData,0.05,planSetup.TotalDose.Dose);
-                DyyList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose); 
-                DzzList[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose); 
+                D005List[countStruct] = CalculateDXXcc(dvhdata2.CurveData,0.05,planSetup.TotalDose.Dose);
+                D050List[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 0.5, planSetup.TotalDose.Dose); 
+                D100List[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 1.0, planSetup.TotalDose.Dose);
+                D500List[countStruct] = CalculateDXXcc(dvhdata2.CurveData, 5.0, planSetup.TotalDose.Dose);
+
                 countStruct++;
             }
         }
@@ -244,11 +250,12 @@ namespace Evaluering4D
         /// <param name="minList">All minimum doses</param>
         /// <param name="maxList">All maximum doses</param>
         /// <param name="meanList">All mean doses</param>
-        /// <param name="DxxList"> All D0.05cc values in Gy </param>
-        /// <param name="DyyList">All D0.5cc values in Gy</param>
-        /// <param name="DzzList">All D1.0cc values in Gy</param>
+        /// <param name="D005List"> All D0.05cc values in Gy </param>
+        /// <param name="D050List">All D0.5cc values in Gy</param>
+        /// <param name="D100List">All D1.0cc values in Gy</param>
+        ///<param name="D500List">All D5.0cc values in Gy</param>
         /// <param name="modalityLine">Line descriping modality, resolution of dose and fractionation</param>
-        private void WriteDVHfile(string v, string filename, double[,] dvhList, string[] idList, int numbOfStructs, int largestDVH, string firstLine, double[] volList, double[] minList, double[] maxList, double[] meanList, double[] DxxList, double[] DyyList, double[] DzzList,string modalityLine)
+        private void WriteDVHfile(string v, string filename, double[,] dvhList, string[] idList, int numbOfStructs, int largestDVH, string firstLine, double[] volList, double[] minList, double[] maxList, double[] meanList, double[] D005List, double[] D050List, double[] D100List, double[] D500List, string modalityLine)
         {
             string lines = firstLine + Environment.NewLine;
 
@@ -293,21 +300,28 @@ namespace Evaluering4D
             temp = "D0.05cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DxxList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(D005List[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D0.5cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DyyList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(D050List[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
             temp = "D1cc [Gy] \t";
             for (int p = 0; p < numbOfStructs; p++)
             {
-                temp += Math.Round(DzzList[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+                temp += Math.Round(D100List[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
+            }
+            lines += temp + Environment.NewLine;
+
+            temp = "D5cc [Gy] \t";
+            for (int p = 0; p < numbOfStructs; p++)
+            {
+                temp += Math.Round(D500List[p], 3, MidpointRounding.AwayFromZero).ToString("0.000") + "\t";
             }
             lines += temp + Environment.NewLine;
 
@@ -346,7 +360,6 @@ namespace Evaluering4D
             //Here we start by 1 as the first column is the dose
             //We will find all struyctures to fill in.
             int countStruct = 1;
-            //double resolutiondvh = 0.1;
             for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
             {
                 if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
@@ -385,7 +398,6 @@ namespace Evaluering4D
             //Here we start by 1 as the first column is the dose
             //We will find all struyctures to fill in.
             int countStruct = 1;
-            //double resolutiondvh = 0.1;
             for (int j = 0; j < planSetup.StructureSet.Structures.Count(); j++)
             {
                 if (planSetup.StructureSet.Structures.ElementAt(j) == null || planSetup.StructureSet.Structures.ElementAt(j).IsEmpty || planSetup.StructureSet.Structures.ElementAt(j).DicomType.ToLower() == "support")
